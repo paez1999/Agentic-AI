@@ -1,0 +1,26 @@
+services:
+  supply-chain:
+    build: .
+    env_file: .env
+    # mlx-lm runs on the host (Apple Silicon only).
+    # Set LLM_URL=http://host.docker.internal:8080 in .env when using Docker.
+    network_mode: host
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: supply_chain
+      POSTGRES_USER: scuser
+      POSTGRES_PASSWORD: scpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scuser"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
