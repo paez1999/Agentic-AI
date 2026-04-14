@@ -4,7 +4,8 @@
     "Houston",
     "Tampa",
     "Panama",
-    "Guatemala"
+    "South Africa",
+    "Iran"
   ],
   "statuses": {
     "Veracruz": {
@@ -61,36 +62,43 @@
     "Panama": {
       "city": "Panama",
       "risk_level": "LOW",
-      "summary": "The weather conditions in Panama are favorable with no severe storms or hurricanes expected this season, while recent news headlines focus on events outside the port city.",
+      "summary": "The weather in Panama City is mostly cloudy with mild temperatures, while recent news headlines are unrelated to port risks.",
       "weather": {
         "city": "Panama",
         "country": "PA",
-        "temperature_c": 31.07,
-        "feels_like_c": 34.26,
-        "humidity_pct": 57,
-        "wind_speed_ms": 4.83,
-        "description": "nubes",
-        "condition_id": 804,
+        "temperature_c": 31.77,
+        "feels_like_c": 33.08,
+        "humidity_pct": 46,
+        "wind_speed_ms": 5.27,
+        "description": "muy nuboso",
+        "condition_id": 803,
         "condition_main": "Clouds"
       },
-      "scanned_at": "2026-04-13T22:11:25.334950Z"
+      "scanned_at": "2026-04-14T21:21:28.923619Z"
     },
-    "Guatemala": {
-      "city": "Guatemala",
-      "risk_level": "CRITICAL",
-      "summary": "A nuclear strike simulation affecting Guatemala and surrounding regions poses a critical threat to the port city with hazards including blast damage, radiation contamination, and total port denial.",
+    "South Africa": {
+      "city": "South Africa",
+      "risk_level": "MEDIUM",
+      "summary": "The current weather data is inconclusive due to an API error, but recent news headlines include a potential hurricane season, US-Iran port blockade tensions, and a school shooting in Turkey, suggesting a moderate risk level.",
+      "weather": null,
+      "scanned_at": "2026-04-14T21:20:44.536229Z"
+    },
+    "Iran": {
+      "city": "Iran",
+      "risk_level": "MEDIUM",
+      "summary": "The clear weather in Iran poses a low direct threat to the port city, but the ongoing US blockade and high number of executions increase overall political tensions and instability.",
       "weather": {
-        "city": "Guatemala City",
-        "country": "GT",
-        "temperature_c": 25.75,
-        "feels_like_c": 25.66,
-        "humidity_pct": 49,
-        "wind_speed_ms": 9.26,
-        "description": "algo de nubes",
-        "condition_id": 801,
-        "condition_main": "Clouds"
+        "city": "Iran",
+        "country": "IR",
+        "temperature_c": 15.26,
+        "feels_like_c": 13.29,
+        "humidity_pct": 17,
+        "wind_speed_ms": 2.23,
+        "description": "cielo claro",
+        "condition_id": 800,
+        "condition_main": "Clear"
       },
-      "scanned_at": "2026-04-13T22:25:32.703848Z"
+      "scanned_at": "2026-04-14T21:20:36.425658Z"
     }
   }
 }

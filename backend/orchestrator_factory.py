@@ -9,6 +9,7 @@ from src.orchestrator import Orchestrator
 def create_orchestrator_for_port(
     city: str,
     simulation_context: str = "",
+    avoid_polygon: list[list[float]] | None = None,
 ) -> Orchestrator:
     """Build an Orchestrator parameterised for a single port city.
 
@@ -23,11 +24,13 @@ def create_orchestrator_for_port(
     destination = "Houston" if city.lower() != "houston" else "New Orleans"
 
     orchestrator = Orchestrator.__new__(Orchestrator)
+    orchestrator._bus = None  # no event bus for per-port jobs
     orchestrator.risk_monitor = create_risk_monitor(cities=cities)
     orchestrator.inventory_manager = create_inventory_manager(cities=cities)
     orchestrator.route_optimizer = create_route_optimizer(
         origin=city,
         destination=destination,
+        avoid_polygon=avoid_polygon,
     )
 
     if simulation_context:

@@ -16,6 +16,25 @@ After all tool calls complete, write your final report covering:
 Respond in English."""
 
 
+def create_inventory_manager_mcp(tools: list, cities: list[str] | None = None) -> Agent:
+    """Same as create_inventory_manager() but tools come from MCP servers.
+
+    tools — list[Tool] returned by MCPServerConnection.to_tools() for the
+            inventory server.
+    """
+    resolved_cities = cities or _DEFAULT_CITIES
+    city_list = ", ".join(resolved_cities)
+    forced = [{"name": "get_inventory", "args": {"location": c}} for c in resolved_cities]
+    forced.append({"name": "get_active_routes", "args": {}})
+    return Agent(
+        name="InventoryManager",
+        system_prompt=SYSTEM_PROMPT.replace("each monitored location", city_list),
+        tools=tools,
+        terminal_tool="get_active_routes",
+        forced_tool_calls=forced,
+    )
+
+
 def create_inventory_manager(cities: list[str] | None = None) -> Agent:
     resolved_cities = cities or _DEFAULT_CITIES
     city_list = ", ".join(resolved_cities)

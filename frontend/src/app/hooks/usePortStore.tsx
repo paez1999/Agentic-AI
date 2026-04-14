@@ -180,6 +180,7 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
         error: null,
         started_at: new Date().toISOString(),
         completed_at: null,
+        has_map: false,
       },
     }));
     return job_id;

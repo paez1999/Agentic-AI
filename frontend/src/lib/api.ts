@@ -49,6 +49,7 @@ export const api = {
       request<{ city: string }>(`/api/ports/${encodeURIComponent(city)}`, {
         method: "DELETE",
       }),
+    reset: () => request<{ reset: string[] }>("/api/ports/reset", { method: "POST" }),
   },
 
   scan: {

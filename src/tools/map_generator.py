@@ -16,7 +16,7 @@ def generate_route_map(
     m = folium.Map(location=[24.0, -90.0], zoom_start=5, tiles="OpenStreetMap")
 
     # City markers — COORDS is [lon, lat], folium needs [lat, lon]
-    city_labels = {"veracruz": "Veracruz", "houston": "Houston", "tampa": "Tampa"}
+    city_labels = {"veracruz": "Veracruz", "houston": "Houston", "tampa": "Tampa", "panama": "Panama"}
     for key, label in city_labels.items():
         if key in COORDS:
             lon, lat = COORDS[key]
@@ -40,14 +40,14 @@ def generate_route_map(
             tooltip="Alternative route",
         ).add_to(m)
 
-    # Hurricane risk polygon — semi-transparent red
+    # Risk zone polygon — semi-transparent red
     if risk_polygon:
         folium.Polygon(
             locations=[[c[1], c[0]] for c in risk_polygon],
             color="#990000",
             fill=True,
             fill_opacity=0.25,
-            tooltip="Hurricane risk zone",
+            tooltip="Risk zone",
         ).add_to(m)
 
     abs_path = os.path.abspath(output_path)

@@ -13,9 +13,13 @@ from typing import Any
 from dotenv import load_dotenv
 load_dotenv()
 
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
 
 from backend.analysis_jobs import AnalysisJobStore
 from backend.models import AutoScanConfig, PortStatus, RiskLevel
@@ -81,6 +85,7 @@ class CreateSimulationBody(BaseModel):
     affected_cities: list[str]
     description: str | None = None
     severity: RiskLevel | None = None
+    polygon: list[list[float]] | None = None
 
 
 # ── REST endpoints ────────────────────────────────────────────────────────────
@@ -132,7 +137,8 @@ async def start_analysis(city: str) -> dict:
     if not registry.has_port(city):
         raise HTTPException(404, f"Port '{city}' not monitored")
     sim_context = simulations.context_for_city(city)
-    job_id = await job_store.start_job(city, ws_manager, simulation_context=sim_context)
+    avoid_polygon = simulations.polygon_for_city(city)
+    job_id = await job_store.start_job(city, ws_manager, simulation_context=sim_context, avoid_polygon=avoid_polygon)
     return {"job_id": job_id, "city": city}
 
 
@@ -142,6 +148,16 @@ async def get_analysis(job_id: str) -> dict:
     if job is None:
         raise HTTPException(404, f"Job '{job_id}' not found")
     return job.model_dump(mode="json")
+
+
+@app.get("/api/analysis/{job_id}/map")
+async def get_analysis_map(job_id: str) -> FileResponse:
+    job = job_store.get(job_id)
+    if job is None:
+        raise HTTPException(404, f"Job '{job_id}' not found")
+    if not job.has_map or not job.map_path or not Path(job.map_path).exists():
+        raise HTTPException(404, "Route map not available for this job")
+    return FileResponse(job.map_path, media_type="text/html")
 
 
 @app.get("/api/auto-scan")
@@ -195,6 +211,7 @@ async def create_simulation(body: CreateSimulationBody) -> dict:
         affected_cities=body.affected_cities,
         description=body.description,
         severity=body.severity,
+        polygon=body.polygon,
     )
     payload = event.model_dump(mode="json")
     await ws_manager.broadcast("simulation.created", payload)
@@ -230,6 +247,18 @@ async def clear_simulations() -> dict:
     for city in affected:
         asyncio.create_task(_scan_single(city))
     return {"removed": len(removed)}
+
+
+@app.post("/api/ports/reset")
+async def reset_all_threats() -> dict:
+    """Force all ports to LOW risk and kick off a fresh scan."""
+    from backend.models import PortStatus as _PortStatus
+    for city in registry.list_ports():
+        clean = _PortStatus(city=city, risk_level=RiskLevel.LOW, summary="Awaiting scan")
+        registry.update_status(city, clean)
+        await ws_manager.broadcast("port.status_updated", {"status": clean.model_dump(mode="json")})
+    asyncio.create_task(_scan_all())
+    return {"reset": registry.list_ports()}
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────

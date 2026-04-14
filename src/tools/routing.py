@@ -9,6 +9,7 @@ COORDS = {
     "houston": [-95.3698, 29.7604],
     "tampa": [-82.4572, 27.9506],
     "mexico city": [-99.1332, 19.4326],
+    "panama": [-79.5197, 8.9936],
 }
 
 ORS_BASE = "https://api.openrouteservice.org/v2/directions/driving-car/geojson"

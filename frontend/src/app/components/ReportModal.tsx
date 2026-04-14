@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { FullAnalysisJob, PortStatus } from "@/lib/types";
 import { RiskBadge } from "./RiskBadge";
-import { X, Play, Loader2, Terminal, Trash2, FlaskConical, RefreshCw, Radar } from "lucide-react";
+import { X, Play, Loader2, Terminal, Trash2, FlaskConical, RefreshCw, Radar, Map } from "lucide-react";
 import { usePortStore } from "../hooks/usePortStore";
 import { EVENT_ICON, EVENT_LABEL } from "@/lib/eventIcons";
 import { clsx } from "clsx";
@@ -13,7 +13,7 @@ interface ReportModalProps {
   onClose: () => void;
 }
 
-type Tab = "risk" | "inventory" | "action";
+type Tab = "risk" | "inventory" | "action" | "map";
 
 export function ReportModal({ port, onClose }: ReportModalProps) {
   const { jobs, startAnalysis, scanOne, removePort, simulationsAffecting } = usePortStore();
@@ -56,13 +56,18 @@ export function ReportModal({ port, onClose }: ReportModalProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const tabs: { key: Tab; label: string; content: string | null | undefined }[] = [
+  const textTabs: { key: Tab; label: string; content: string | null | undefined }[] = [
     { key: "risk", label: "Risk", content: job?.risk_report },
     { key: "inventory", label: "Inventory", content: job?.inventory_report },
     { key: "action", label: "Action Plan", content: job?.action_plan },
   ];
 
-  const activeContent = tabs.find((t) => t.key === activeTab)?.content;
+  const tabs: { key: Tab; label: string }[] = [
+    ...textTabs,
+    ...(job?.has_map ? [{ key: "map" as Tab, label: "Route Map" }] : []),
+  ];
+
+  const activeContent = textTabs.find((t) => t.key === activeTab)?.content;
 
   return (
     <div
@@ -239,11 +244,21 @@ export function ReportModal({ port, onClose }: ReportModalProps) {
               ))}
             </div>
             <div className="overflow-y-auto flex-1 bg-slate-950/60">
-              <div className="px-5 py-4">
-                <pre className="whitespace-pre-wrap font-mono text-[12px] text-slate-300 leading-relaxed">
-                  {activeContent ?? "— no data —"}
-                </pre>
-              </div>
+              {activeTab === "map" ? (
+                <iframe
+                  src={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/analysis/${job?.job_id}/map`}
+                  className="w-full border-0"
+                  style={{ height: "520px" }}
+                  sandbox="allow-scripts allow-same-origin"
+                  title="Route Map"
+                />
+              ) : (
+                <div className="px-5 py-4">
+                  <pre className="whitespace-pre-wrap font-mono text-[12px] text-slate-300 leading-relaxed">
+                    {activeContent ?? "— no data —"}
+                  </pre>
+                </div>
+              )}
             </div>
           </>
         )}

@@ -29,6 +29,8 @@ class FullAnalysisJob(BaseModel):
     risk_report: str | None = None
     inventory_report: str | None = None
     action_plan: str | None = None
+    has_map: bool = False
+    map_path: str | None = None
     error: str | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None

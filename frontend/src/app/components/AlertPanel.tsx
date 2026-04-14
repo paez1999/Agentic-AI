@@ -2,8 +2,9 @@
 
 import type { PortStatus } from "@/lib/types";
 import { RiskBadge } from "./RiskBadge";
-import { AlertTriangle, Shield, ChevronRight } from "lucide-react";
+import { AlertTriangle, Shield, ChevronRight, RotateCcw } from "lucide-react";
 import { clsx } from "clsx";
+import { api } from "@/lib/api";
 
 interface AlertPanelProps {
   ports: PortStatus[];
@@ -54,9 +55,19 @@ export function AlertPanel({ ports, onViewDetails }: AlertPanelProps) {
             [{alerts.length.toString().padStart(2, "0")}]
           </span>
         </div>
-        <span className="font-mono text-[10px] text-red-400/70 uppercase tracking-wider">
-          Priority: ELEVATED
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[10px] text-red-400/70 uppercase tracking-wider">
+            Priority: ELEVATED
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); api.ports.reset(); }}
+            title="Clear all threats and rescan"
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-red-400/60 hover:text-red-300 transition-colors"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Clear
+          </button>
+        </div>
       </div>
       <ul className="divide-y divide-red-500/10">
         {alerts.map((port, idx) => (

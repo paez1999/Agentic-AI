@@ -13,9 +13,8 @@ import httpx
 from src.orchestrator import Orchestrator
 
 SCENARIO = """
-Category 4 hurricane detected approaching the Gulf of Mexico.
-Assess the impact on our supply chain with distribution centers
-in Veracruz, Houston, and Tampa.
+Monitor current supply chain conditions for distribution centers
+in Veracruz, Houston, and Tampa. Assess any active risks and recommend actions.
 """
 
 # 1. Update the model name to match exactly what Ollama uses

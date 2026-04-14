@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from backend.models import RiskLevel
+
+_SIMULATIONS_PATH = Path(__file__).parent / "data" / "simulations.json"
 
 
 class EventType(str, Enum):
@@ -91,12 +95,24 @@ EVENT_DEFAULTS: dict[EventType, dict[str, Any]] = {
 }
 
 
+# Risk-zone polygons (lon, lat) for hurricane events, keyed by affected city.
+# Each polygon covers the dangerous sea/coastal area near that port that
+# routing should avoid when a hurricane is active.
+HURRICANE_POLYGONS: dict[str, list[list[float]]] = {
+    "Veracruz": [[-97, 17], [-97, 22], [-92, 22], [-92, 17], [-97, 17]],
+    "Houston":  [[-97, 26], [-97, 30], [-93, 30], [-93, 26], [-97, 26]],
+    "Tampa":    [[-84, 24], [-84, 28], [-80, 28], [-80, 24], [-84, 24]],
+    "Panama":   [[-81,  7], [-81, 10], [-77, 10], [-77,  7], [-81,  7]],
+}
+
+
 class SimulationEvent(BaseModel):
     sim_id: str = Field(default_factory=lambda: uuid.uuid4().hex[:8])
     event_type: EventType
     severity: RiskLevel
     affected_cities: list[str]
     description: str
+    polygon: list[list[float]] | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def context_for(self, city: str) -> str | None:
@@ -116,6 +132,23 @@ class SimulationEvent(BaseModel):
 class SimulationStore:
     def __init__(self) -> None:
         self._events: dict[str, SimulationEvent] = {}
+        self._load()
+
+    def _load(self) -> None:
+        if not _SIMULATIONS_PATH.exists():
+            return
+        try:
+            raw = json.loads(_SIMULATIONS_PATH.read_text())
+            for item in raw:
+                ev = SimulationEvent.model_validate(item)
+                self._events[ev.sim_id] = ev
+        except Exception:
+            pass  # corrupt file — start empty
+
+    def _save(self) -> None:
+        _SIMULATIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        data = [ev.model_dump(mode="json") for ev in self._events.values()]
+        _SIMULATIONS_PATH.write_text(json.dumps(data, indent=2))
 
     # ── queries ──────────────────────────────────────────────────────────────
 
@@ -140,6 +173,13 @@ class SimulationStore:
         ]
         return "\n".join(lines)
 
+    def polygon_for_city(self, city: str) -> list[list[float]] | None:
+        """Return the polygon of the first active simulation affecting this city."""
+        for ev in self._events.values():
+            if city in ev.affected_cities and ev.polygon is not None:
+                return ev.polygon
+        return None
+
     def events_affecting(self, city: str) -> list[SimulationEvent]:
         return [ev for ev in self._events.values() if city in ev.affected_cities]
 
@@ -151,23 +191,38 @@ class SimulationStore:
         affected_cities: list[str],
         description: str | None = None,
         severity: RiskLevel | None = None,
+        polygon: list[list[float]] | None = None,
     ) -> SimulationEvent:
         defaults = EVENT_DEFAULTS.get(event_type, {})
         resolved_severity = severity or defaults.get("severity", RiskLevel.HIGH)
         resolved_description = description or defaults.get("headline", "Simulated event")
+
+        # Auto-assign hurricane polygon based on first matching affected city
+        if polygon is None and event_type == EventType.HURRICANE:
+            for city in affected_cities:
+                if city in HURRICANE_POLYGONS:
+                    polygon = HURRICANE_POLYGONS[city]
+                    break
+
         event = SimulationEvent(
             event_type=event_type,
             severity=resolved_severity,
             affected_cities=[c for c in affected_cities if c],
             description=resolved_description,
+            polygon=polygon,
         )
         self._events[event.sim_id] = event
+        self._save()
         return event
 
     def remove(self, sim_id: str) -> SimulationEvent | None:
-        return self._events.pop(sim_id, None)
+        ev = self._events.pop(sim_id, None)
+        if ev is not None:
+            self._save()
+        return ev
 
     def clear(self) -> list[SimulationEvent]:
         removed = list(self._events.values())
         self._events.clear()
+        self._save()
         return removed

@@ -26,6 +26,7 @@ export interface FullAnalysisJob {
   risk_report: string | null;
   inventory_report: string | null;
   action_plan: string | null;
+  has_map: boolean;
   error: string | null;
   started_at: string | null;
   completed_at: string | null;

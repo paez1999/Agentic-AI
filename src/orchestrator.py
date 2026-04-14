@@ -136,24 +136,45 @@ class FinalReport:
 
 
 class Orchestrator:
-    def __init__(self):
-        self.risk_monitor = create_risk_monitor()
-        self.inventory_manager = create_inventory_manager()
-        self.route_optimizer = create_route_optimizer()
+    def __init__(
+        self,
+        risk_monitor=None,
+        inventory_manager=None,
+        route_optimizer=None,
+        event_bus=None,
+    ):
+        self.risk_monitor = risk_monitor or create_risk_monitor()
+        self.inventory_manager = inventory_manager or create_inventory_manager()
+        self.route_optimizer = route_optimizer or create_route_optimizer()
+        self._bus = event_bus  # optional EventBus; None = no events published
 
-    def run(self, scenario: str) -> FinalReport:
+    def _publish(self, subject: str, event_type: str, data: dict) -> None:
+        if self._bus is not None:
+            self._bus.publish(subject, event_type, data)
+
+    def run(self, scenario: str, map_output_path: str = "output/route_map.html") -> FinalReport:
         print("\n" + "=" * 60)
         print("=== PHASE 1: RISK MONITORING ===")
         print("=" * 60)
         risk_result = self.risk_monitor.run(scenario)
         _print_live_data(risk_result)
         print("\n[RiskMonitor] Report complete.\n")
+        self._publish(
+            "supply_chain.risk.alert",
+            "com.supplychain.risk.alert",
+            {"content": risk_result.content, "scenario": scenario.strip()},
+        )
 
         print("\n" + "=" * 60)
         print("=== PHASE 2: INVENTORY ASSESSMENT ===")
         print("=" * 60)
         inventory_result = self.inventory_manager.run(risk_result.content)
         print("\n[InventoryManager] Report complete.\n")
+        self._publish(
+            "supply_chain.inventory.updated",
+            "com.supplychain.inventory.updated",
+            {"content": inventory_result.content},
+        )
 
         print("\n" + "=" * 60)
         print("=== PHASE 3: ROUTE OPTIMIZATION ===")
@@ -164,6 +185,11 @@ class Orchestrator:
         )
         action_result = self.route_optimizer.run(combined_context)
         print("\n[RouteOptimizer] Plan complete.\n")
+        self._publish(
+            "supply_chain.action.executed",
+            "com.supplychain.action.executed",
+            {"content": action_result.content},
+        )
 
         # Feature 3: generate route map
         try:
@@ -173,7 +199,7 @@ class Orchestrator:
                     original_coords=geos["original"],
                     alt_coords=geos["alternative"],
                     risk_polygon=geos["risk_polygon"],
-                    output_path="output/route_map.html",
+                    output_path=map_output_path,
                 )
                 print(f"\n[Map] Saved to {map_path}")
                 import threading

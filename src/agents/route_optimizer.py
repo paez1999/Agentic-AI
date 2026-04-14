@@ -3,9 +3,7 @@ from src.tools.routing import ROUTE_TOOL, ALT_ROUTE_TOOL, ALERT_TOOL, CONFIRM_TO
 
 _DEFAULT_ORIGIN = "Veracruz"
 _DEFAULT_DESTINATION = "Houston"
-_DEFAULT_POLYGON = [[-97, 26], [-97, 21], [-90, 21], [-90, 26]]
-
-SYSTEM_PROMPT = """You are a supply chain route optimization agent.
+SYSTEM_PROMPT_WITH_REROUTE = """You are a supply chain route optimization agent.
 Use your tools to reroute affected shipments, then write an action plan.
 
 Call get_route for the given origin/destination. Then call get_alternative_route with an avoid_polygon. Then call send_alert with the appropriate severity. Then call confirm_action.
@@ -16,25 +14,80 @@ After all four tool calls complete, write your final action plan covering:
 
 Respond in English."""
 
+SYSTEM_PROMPT = """You are a supply chain route optimization agent.
+Use your tools to assess the current route and confirm status.
+
+Call get_route for the given origin/destination. Then call confirm_action.
+After tool calls complete, write your final action plan covering:
+- Current route status (distance and time)
+- Action confirmed (Execution OK)
+
+Respond in English."""
+
+
+def create_route_optimizer_mcp(
+    tools: list,
+    origin: str = _DEFAULT_ORIGIN,
+    destination: str = _DEFAULT_DESTINATION,
+    avoid_polygon: list | None = None,
+    alert_message: str = "Supply chain route disruption detected",
+    alert_severity: str = "CRITICAL",
+) -> Agent:
+    """Same as create_route_optimizer() but tools come from MCP servers.
+
+    tools — list[Tool] returned by MCPServerConnection.to_tools() for the
+            routing server.
+    """
+    action_id = f"reroute-{origin.lower()}-{destination.lower()}"
+    if avoid_polygon is not None:
+        forced = [
+            {"name": "get_route",             "args": {"origin": origin, "destination": destination}},
+            {"name": "get_alternative_route", "args": {"origin": origin, "destination": destination, "avoid_polygon": avoid_polygon}},
+            {"name": "send_alert",            "args": {"message": alert_message, "severity": alert_severity}},
+            {"name": "confirm_action",        "args": {"action": action_id}},
+        ]
+        prompt = SYSTEM_PROMPT_WITH_REROUTE
+    else:
+        forced = [
+            {"name": "get_route",     "args": {"origin": origin, "destination": destination}},
+            {"name": "confirm_action", "args": {"action": action_id}},
+        ]
+        prompt = SYSTEM_PROMPT
+    return Agent(
+        name="RouteOptimizer",
+        system_prompt=prompt,
+        tools=tools,
+        terminal_tool="confirm_action",
+        forced_tool_calls=forced,
+    )
+
 
 def create_route_optimizer(
     origin: str = _DEFAULT_ORIGIN,
     destination: str = _DEFAULT_DESTINATION,
     avoid_polygon: list | None = None,
-    alert_message: str = "Hurricane Cat 4 impact on Gulf supply chain routes",
+    alert_message: str = "Supply chain route disruption detected",
     alert_severity: str = "CRITICAL",
 ) -> Agent:
-    polygon = avoid_polygon if avoid_polygon is not None else _DEFAULT_POLYGON
     action_id = f"reroute-{origin.lower()}-{destination.lower()}"
+    if avoid_polygon is not None:
+        forced = [
+            {"name": "get_route",             "args": {"origin": origin, "destination": destination}},
+            {"name": "get_alternative_route", "args": {"origin": origin, "destination": destination, "avoid_polygon": avoid_polygon}},
+            {"name": "send_alert",            "args": {"message": alert_message, "severity": alert_severity}},
+            {"name": "confirm_action",        "args": {"action": action_id}},
+        ]
+        prompt = SYSTEM_PROMPT_WITH_REROUTE
+    else:
+        forced = [
+            {"name": "get_route",      "args": {"origin": origin, "destination": destination}},
+            {"name": "confirm_action", "args": {"action": action_id}},
+        ]
+        prompt = SYSTEM_PROMPT
     return Agent(
         name="RouteOptimizer",
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=prompt,
         tools=[ROUTE_TOOL, ALT_ROUTE_TOOL, ALERT_TOOL, CONFIRM_TOOL],
         terminal_tool="confirm_action",
-        forced_tool_calls=[
-            {"name": "get_route",            "args": {"origin": origin, "destination": destination}},
-            {"name": "get_alternative_route", "args": {"origin": origin, "destination": destination, "avoid_polygon": polygon}},
-            {"name": "send_alert",           "args": {"message": alert_message, "severity": alert_severity}},
-            {"name": "confirm_action",       "args": {"action": action_id}},
-        ],
+        forced_tool_calls=forced,
     )
