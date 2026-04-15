@@ -3,14 +3,16 @@
 import { usePortStore } from "../hooks/usePortStore";
 import { RiskBadge } from "./RiskBadge";
 import { EVENT_ICON, EVENT_LABEL } from "@/lib/eventIcons";
-import { FlaskConical, X, Plus } from "lucide-react";
+import { FlaskConical, X, Plus, MapPin, Globe } from "lucide-react";
 import { clsx } from "clsx";
 
 interface SimulationPanelProps {
   onNewSimulation: () => void;
+  onDropOnMap: () => void;
+  onMonitorMap: () => void;
 }
 
-export function SimulationPanel({ onNewSimulation }: SimulationPanelProps) {
+export function SimulationPanel({ onNewSimulation, onDropOnMap, onMonitorMap }: SimulationPanelProps) {
   const { simulations, removeSimulation } = usePortStore();
 
   return (
@@ -25,13 +27,29 @@ export function SimulationPanel({ onNewSimulation }: SimulationPanelProps) {
             [{simulations.length.toString().padStart(2, "0")} ACTIVE]
           </span>
         </div>
-        <button
-          onClick={onNewSimulation}
-          className="inline-flex items-center gap-1.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-fuchsia-300 hover:bg-fuchsia-500/20 transition-colors"
-        >
-          <Plus className="h-3 w-3" />
-          Inject Event
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onMonitorMap}
+            className="inline-flex items-center gap-1.5 rounded border border-slate-600/40 bg-slate-700/20 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-slate-300 hover:bg-slate-700/40 transition-colors"
+          >
+            <Globe className="h-3 w-3" />
+            Monitor
+          </button>
+          <button
+            onClick={onDropOnMap}
+            className="inline-flex items-center gap-1.5 rounded border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+          >
+            <MapPin className="h-3 w-3" />
+            Drop on Map
+          </button>
+          <button
+            onClick={onNewSimulation}
+            className="inline-flex items-center gap-1.5 rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-fuchsia-300 hover:bg-fuchsia-500/20 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            Inject Event
+          </button>
+        </div>
       </div>
 
       {simulations.length === 0 ? (

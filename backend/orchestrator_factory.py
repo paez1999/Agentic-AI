@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from src.agents.risk_monitor import create_risk_monitor
-from src.agents.inventory_manager import create_inventory_manager
-from src.agents.route_optimizer import create_route_optimizer
+from src.agents.risk_monitor import create_risk_monitor, create_risk_monitor_mcp
+from src.agents.inventory_manager import create_inventory_manager, create_inventory_manager_mcp
+from src.agents.route_optimizer import create_route_optimizer, create_route_optimizer_mcp
 from src.orchestrator import Orchestrator
 
 
@@ -10,28 +10,46 @@ def create_orchestrator_for_port(
     city: str,
     simulation_context: str = "",
     avoid_polygon: list[list[float]] | None = None,
+    event_bus=None,
+    mcp_tools: dict | None = None,
 ) -> Orchestrator:
     """Build an Orchestrator parameterised for a single port city.
 
-    The risk monitor and inventory manager scan just that city.
-    The route optimizer uses city as origin, Houston as destination
-    (falls back to a sensible default when city IS Houston).
-
-    When a simulation_context is supplied, it is appended to each agent's
-    system prompt so the LLM treats the simulated scenario as ground truth.
+    When mcp_tools is provided (dict with keys weather/news/inventory/routing),
+    agents are wired to MCP server subprocesses instead of direct Python calls.
+    When event_bus is provided, the orchestrator publishes CloudEvents to NATS.
+    Falls back to direct-Python tools when mcp_tools is None.
     """
     cities = [city]
     destination = "Houston" if city.lower() != "houston" else "New Orleans"
 
     orchestrator = Orchestrator.__new__(Orchestrator)
-    orchestrator._bus = None  # no event bus for per-port jobs
-    orchestrator.risk_monitor = create_risk_monitor(cities=cities)
-    orchestrator.inventory_manager = create_inventory_manager(cities=cities)
-    orchestrator.route_optimizer = create_route_optimizer(
-        origin=city,
-        destination=destination,
-        avoid_polygon=avoid_polygon,
-    )
+    orchestrator._bus = event_bus
+
+    if mcp_tools is not None:
+        weather_news_tools = mcp_tools.get("weather", []) + mcp_tools.get("news", [])
+        orchestrator.risk_monitor = create_risk_monitor_mcp(
+            tools=weather_news_tools,
+            cities=cities,
+        )
+        orchestrator.inventory_manager = create_inventory_manager_mcp(
+            tools=mcp_tools.get("inventory", []),
+            cities=cities,
+        )
+        orchestrator.route_optimizer = create_route_optimizer_mcp(
+            tools=mcp_tools.get("routing", []),
+            origin=city,
+            destination=destination,
+            avoid_polygon=avoid_polygon,
+        )
+    else:
+        orchestrator.risk_monitor = create_risk_monitor(cities=cities)
+        orchestrator.inventory_manager = create_inventory_manager(cities=cities)
+        orchestrator.route_optimizer = create_route_optimizer(
+            origin=city,
+            destination=destination,
+            avoid_polygon=avoid_polygon,
+        )
 
     if simulation_context:
         suffix = (

@@ -4,6 +4,7 @@ import type {
   EventTypeMeta,
   FullAnalysisJob,
   PortStatus,
+  RouteStatus,
   SimulationEvent,
 } from "./types";
 
@@ -79,10 +80,39 @@ export const api = {
       }),
   },
 
+  routes: {
+    list: () => request<RouteStatus[]>("/api/routes"),
+    geometry: (route_id: string) =>
+      request<{ route_id: string; route_type: string; coordinates: [number, number][] }>(
+        `/api/routes/${route_id}/geometry`
+      ),
+    add: (origin: string, destination: string, route_type: string = "maritime") =>
+      request<RouteStatus>("/api/routes", {
+        method: "POST",
+        body: JSON.stringify({ origin, destination, route_type }),
+      }),
+    remove: (route_id: string) =>
+      request<{ route_id: string }>(`/api/routes/${encodeURIComponent(route_id)}`, {
+        method: "DELETE",
+      }),
+    scan: (route_id: string) =>
+      request<{ message: string }>(
+        `/api/routes/${encodeURIComponent(route_id)}/scan`,
+        { method: "POST" }
+      ),
+    scanAll: () =>
+      request<{ message: string }>("/api/routes/scan", { method: "POST" }),
+  },
+
   simulations: {
     list: () => request<SimulationEvent[]>("/api/simulations"),
     eventTypes: () =>
       request<EventTypeMeta[]>("/api/simulations/event-types"),
+    createFromCoordinates: (payload: import("./types").CoordSimulationPayload) =>
+      request<SimulationEvent & { affected_route_ids: string[] }>(
+        "/api/simulations/from-coordinates",
+        { method: "POST", body: JSON.stringify(payload) }
+      ),
     create: (payload: CreateSimulationPayload) =>
       request<SimulationEvent>("/api/simulations", {
         method: "POST",

@@ -12,13 +12,27 @@ import { MetricsBar } from "./components/MetricsBar";
 import { StatusBar } from "./components/StatusBar";
 import { SimulationPanel } from "./components/SimulationPanel";
 import { CreateSimulationDialog } from "./components/CreateSimulationDialog";
+import dynamic from "next/dynamic";
+const MapDropDialog = dynamic(
+  () => import("./components/MapDropDialog").then((m) => m.MapDropDialog),
+  { ssr: false }
+);
+const ThreatMonitorMap = dynamic(
+  () => import("./components/ThreatMonitorMap").then((m) => m.ThreatMonitorMap),
+  { ssr: false }
+);
+import { RouteGrid } from "./components/RouteGrid";
+import { AddRouteDialog } from "./components/AddRouteDialog";
 import { Plus, Activity } from "lucide-react";
 
 export default function DashboardPage() {
-  const { ports, connected, scanOne } = usePortStore();
+  const { ports, routes, simulations, connected, scanOne, refreshSimulations } = usePortStore();
   const [selectedPort, setSelectedPort] = useState<PortStatus | null>(null);
   const [showAddPort, setShowAddPort] = useState(false);
   const [showCreateSim, setShowCreateSim] = useState(false);
+  const [showMapDrop, setShowMapDrop] = useState(false);
+  const [showMonitor, setShowMonitor] = useState(false);
+  const [showAddRoute, setShowAddRoute] = useState(false);
   const [autoScan, setAutoScan] = useState<AutoScanConfig>({
     enabled: false,
     interval_minutes: 15,
@@ -62,7 +76,12 @@ export default function DashboardPage() {
       <main className="mx-auto max-w-7xl px-4 py-6 space-y-6">
         <MetricsBar ports={ports} />
         <AlertPanel ports={ports} onViewDetails={setSelectedPort} />
-        <SimulationPanel onNewSimulation={() => setShowCreateSim(true)} />
+        <SimulationPanel
+          onNewSimulation={() => setShowCreateSim(true)}
+          onDropOnMap={() => setShowMapDrop(true)}
+          onMonitorMap={() => setShowMonitor(true)}
+        />
+        <RouteGrid onAddRoute={() => setShowAddRoute(true)} />
         <PortGrid
           ports={ports}
           onViewDetails={setSelectedPort}
@@ -77,8 +96,25 @@ export default function DashboardPage() {
         <ReportModal port={selectedLive} onClose={() => setSelectedPort(null)} />
       )}
       {showAddPort && <AddPortDialog onClose={() => setShowAddPort(false)} />}
+      {showAddRoute && <AddRouteDialog onClose={() => setShowAddRoute(false)} />}
       {showCreateSim && (
         <CreateSimulationDialog onClose={() => setShowCreateSim(false)} />
+      )}
+      {showMapDrop && (
+        <MapDropDialog
+          ports={ports}
+          routes={routes}
+          onClose={() => setShowMapDrop(false)}
+          onCreated={refreshSimulations}
+        />
+      )}
+      {showMonitor && (
+        <ThreatMonitorMap
+          simulations={simulations}
+          ports={ports}
+          routes={routes}
+          onClose={() => setShowMonitor(false)}
+        />
       )}
 
       <StatusBar

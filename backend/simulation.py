@@ -113,6 +113,9 @@ class SimulationEvent(BaseModel):
     affected_cities: list[str]
     description: str
     polygon: list[list[float]] | None = None
+    # Coordinate-drop fields (set when simulation is created via map drop)
+    coordinates: list[float] | None = None   # [lat, lon]
+    radius_km: float | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     def context_for(self, city: str) -> str | None:
@@ -121,9 +124,31 @@ class SimulationEvent(BaseModel):
             return None
         defaults = EVENT_DEFAULTS.get(self.event_type, {})
         hazards = defaults.get("hazards", "severe disruption")
+        geo_note = ""
+        if self.coordinates:
+            lat, lon = self.coordinates
+            geo_note = f" Event epicentre at ({lat:.2f}°, {lon:.2f}°), impact radius {self.radius_km or '?'} km."
         return (
             f"[SIMULATED EVENT · {self.event_type.value} · severity {self.severity.value}] "
-            f"Affecting {city} and surrounding region. "
+            f"Affecting {city} and surrounding region.{geo_note} "
+            f"Hazards: {hazards}. "
+            f"Description: {self.description}"
+        )
+
+    def context_for_route(self, origin: str, destination: str) -> str | None:
+        """
+        Return scenario context for a route that passes through this event's
+        impact zone (coordinate-drop simulations only).
+        """
+        if self.coordinates is None:
+            return None
+        defaults = EVENT_DEFAULTS.get(self.event_type, {})
+        hazards = defaults.get("hazards", "severe disruption")
+        lat, lon = self.coordinates
+        return (
+            f"[SIMULATED EVENT · {self.event_type.value} · severity {self.severity.value}] "
+            f"Route {origin}→{destination} passes through event impact zone "
+            f"(epicentre {lat:.2f}°, {lon:.2f}°, radius {self.radius_km or '?'} km). "
             f"Hazards: {hazards}. "
             f"Description: {self.description}"
         )
@@ -173,6 +198,18 @@ class SimulationStore:
         ]
         return "\n".join(lines)
 
+    def context_for_route_geo(self, origin: str, destination: str) -> str:
+        """
+        Return combined scenario context for a route that passes through any
+        active coordinate-drop simulation's impact zone.
+        """
+        lines = [
+            ctx
+            for ev in self._events.values()
+            if (ctx := ev.context_for_route(origin, destination)) is not None
+        ]
+        return "\n".join(lines)
+
     def polygon_for_city(self, city: str) -> list[list[float]] | None:
         """Return the polygon of the first active simulation affecting this city."""
         for ev in self._events.values():
@@ -192,6 +229,8 @@ class SimulationStore:
         description: str | None = None,
         severity: RiskLevel | None = None,
         polygon: list[list[float]] | None = None,
+        coordinates: list[float] | None = None,
+        radius_km: float | None = None,
     ) -> SimulationEvent:
         defaults = EVENT_DEFAULTS.get(event_type, {})
         resolved_severity = severity or defaults.get("severity", RiskLevel.HIGH)
@@ -210,6 +249,8 @@ class SimulationStore:
             affected_cities=[c for c in affected_cities if c],
             description=resolved_description,
             polygon=polygon,
+            coordinates=coordinates,
+            radius_km=radius_km,
         )
         self._events[event.sim_id] = event
         self._save()

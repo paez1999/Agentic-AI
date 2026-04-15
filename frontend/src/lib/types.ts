@@ -19,6 +19,20 @@ export interface PortStatus {
   scanned_at: string | null;
 }
 
+export type RouteType = "maritime" | "terrestrial" | "air";
+
+export interface RouteStatus {
+  route_id: string;
+  origin: string;
+  destination: string;
+  route_type: RouteType;
+  risk_level: RiskLevel;
+  summary: string;
+  origin_weather: WeatherData | null;
+  destination_weather: WeatherData | null;
+  scanned_at: string | null;
+}
+
 export interface FullAnalysisJob {
   job_id: string;
   city: string;
@@ -42,6 +56,15 @@ export interface AutoScanConfig {
   interval_minutes: number;
 }
 
+export interface CoordSimulationPayload {
+  lat: number;
+  lon: number;
+  radius_km: number;
+  event_type: EventType;
+  description?: string;
+  severity?: RiskLevel;
+}
+
 export type EventType =
   | "HURRICANE"
   | "EARTHQUAKE"
@@ -62,6 +85,9 @@ export interface SimulationEvent {
   severity: RiskLevel;
   affected_cities: string[];
   description: string;
+  polygon: number[][] | null;
+  coordinates: [number, number] | null; // [lat, lon]
+  radius_km: number | null;
   created_at: string;
 }
 

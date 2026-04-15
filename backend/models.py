@@ -22,6 +22,18 @@ class PortStatus(BaseModel):
     scanned_at: datetime | None = None
 
 
+class RouteStatus(BaseModel):
+    route_id: str
+    origin: str
+    destination: str
+    route_type: str = "maritime"   # maritime | terrestrial | air
+    risk_level: RiskLevel = RiskLevel.LOW
+    summary: str = "Awaiting scan"
+    origin_weather: dict[str, Any] | None = None
+    destination_weather: dict[str, Any] | None = None
+    scanned_at: datetime | None = None
+
+
 class FullAnalysisJob(BaseModel):
     job_id: str
     city: str

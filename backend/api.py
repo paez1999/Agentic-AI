@@ -15,27 +15,39 @@ load_dotenv()
 
 from pathlib import Path
 
+import logging
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-
 from backend.analysis_jobs import AnalysisJobStore
 from backend.models import AutoScanConfig, PortStatus, RiskLevel
 from backend.port_registry import PortRegistry
+from backend.route_registry import RouteRegistry
+from backend.route_scanner import RouteRiskScanner
 from backend.scanner import PortRiskScanner
 from backend.scheduler import AutoScanScheduler
+from backend.geo_utils import find_affected_cities, find_affected_routes
+from backend.route_geometry import get_geometry
+from backend.risk_rules import apply_port_rules, apply_route_rules
 from backend.simulation import EventType, SimulationStore
 from backend.websocket_manager import ConnectionManager
+from src.core.event_bus import EventBus
+from src.core.mcp_loader import MCPServerConnection
 from src.tools.inventory_db import init_db
+
+_logger = logging.getLogger(__name__)
 
 
 # ── singletons ────────────────────────────────────────────────────────────────
 
 registry = PortRegistry()
+route_registry = RouteRegistry()
 ws_manager = ConnectionManager()
 scanner = PortRiskScanner()
+route_scanner = RouteRiskScanner()
 job_store = AnalysisJobStore()
 simulations = SimulationStore()
 auto_scan_config = AutoScanConfig()
@@ -50,10 +62,45 @@ async def _scan_all() -> None:
 scheduler = AutoScanScheduler(scan_all_fn=_scan_all)
 
 
+_MCP_SERVERS = {
+    "weather":   "mcp_servers/weather_server.py",
+    "news":      "mcp_servers/news_server.py",
+    "inventory": "mcp_servers/inventory_server.py",
+    "routing":   "mcp_servers/routing_server.py",
+}
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+
+    # EventBus — graceful no-op if NATS unreachable
+    nats_url = os.environ.get("NATS_URL", "nats://localhost:4222")
+    event_bus = EventBus(url=nats_url)
+    job_store._event_bus = event_bus
+
+    # MCP servers — fall back to direct-Python tools on failure
+    _mcp_conns: list[MCPServerConnection] = []
+    try:
+        conns = {name: MCPServerConnection(script) for name, script in _MCP_SERVERS.items()}
+        _mcp_conns = list(conns.values())
+        job_store._mcp_tools = {name: conn.to_tools() for name, conn in conns.items()}
+        _logger.info("[API] MCP servers ready.")
+    except Exception as exc:
+        _logger.warning("[API] MCP startup failed (%s) — using direct-Python tools.", exc)
+        job_store._mcp_tools = None
+
     yield
+
+    for conn in _mcp_conns:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    try:
+        event_bus.close()
+    except Exception:
+        pass
     await scheduler.stop()
 
 
@@ -80,12 +127,27 @@ class AutoScanBody(BaseModel):
     interval_minutes: int = 15
 
 
+class AddRouteBody(BaseModel):
+    origin: str
+    destination: str
+    route_type: str = "maritime"   # maritime | terrestrial | air
+
+
 class CreateSimulationBody(BaseModel):
     event_type: EventType
     affected_cities: list[str]
     description: str | None = None
     severity: RiskLevel | None = None
     polygon: list[list[float]] | None = None
+
+
+class CreateCoordSimulationBody(BaseModel):
+    lat: float
+    lon: float
+    radius_km: float = 300.0
+    event_type: EventType
+    description: str | None = None
+    severity: RiskLevel | None = None
 
 
 # ── REST endpoints ────────────────────────────────────────────────────────────
@@ -130,6 +192,61 @@ async def scan_port_now(city: str) -> dict:
         raise HTTPException(404, f"Port '{city}' not monitored")
     asyncio.create_task(_scan_single(city))
     return {"message": f"Scan started for {city}"}
+
+
+@app.get("/api/routes")
+async def list_routes() -> list[dict]:
+    return [r.model_dump(mode="json") for r in route_registry.list_routes()]
+
+
+@app.post("/api/routes", status_code=201)
+async def add_route(body: AddRouteBody) -> dict:
+    origin = body.origin.strip()
+    destination = body.destination.strip()
+    if not origin or not destination:
+        raise HTTPException(400, "origin and destination must not be empty")
+    added = route_registry.add_route(origin, destination, body.route_type)
+    if added is None:
+        raise HTTPException(409, f"Route '{origin} → {destination}' already monitored")
+    await ws_manager.broadcast("route.added", added.model_dump(mode="json"))
+    asyncio.create_task(_scan_single_route(added.route_id))
+    return added.model_dump(mode="json")
+
+
+@app.get("/api/routes/{route_id:path}/geometry")
+async def route_geometry(route_id: str) -> dict:
+    """Return display geometry (list of [lon, lat]) for a route."""
+    status = route_registry.get_status(route_id)
+    if status is None:
+        raise HTTPException(404, f"Route '{route_id}' not found")
+    coords = get_geometry(status.origin, status.destination, status.route_type)
+    return {"route_id": route_id, "route_type": status.route_type, "coordinates": coords}
+
+
+@app.delete("/api/routes/{route_id:path}")
+async def remove_route(route_id: str) -> dict:
+    status = route_registry.get_status(route_id)
+    if status is None:
+        raise HTTPException(404, f"Route '{route_id}' not found")
+    removed = route_registry.remove_route(route_id)
+    if not removed:
+        raise HTTPException(404, f"Route '{route_id}' not found")
+    await ws_manager.broadcast("route.removed", {"route_id": route_id})
+    return {"route_id": route_id}
+
+
+@app.post("/api/routes/scan")
+async def scan_all_routes_now() -> dict:
+    asyncio.create_task(_scan_all_routes())
+    return {"message": "Scan started for all routes"}
+
+
+@app.post("/api/routes/{route_id:path}/scan")
+async def scan_route_now(route_id: str) -> dict:
+    if not route_registry.has_route(route_id):
+        raise HTTPException(404, f"Route '{route_id}' not monitored")
+    asyncio.create_task(_scan_single_route(route_id))
+    return {"message": f"Scan started for {route_id}"}
 
 
 @app.post("/api/analysis/{city}", status_code=202)
@@ -216,9 +333,63 @@ async def create_simulation(body: CreateSimulationBody) -> dict:
     payload = event.model_dump(mode="json")
     await ws_manager.broadcast("simulation.created", payload)
 
-    # Re-scan affected ports so they reflect the new scenario
+    # Immediately apply deterministic rules to everything (no LLM, instant)
+    await _apply_rules_all_routes()
+    await _apply_rules_all_ports()
+
+    # Then kick off full LLM re-scans for directly affected cities/routes
     for city in event.affected_cities:
         asyncio.create_task(_scan_single(city))
+    for route in route_registry.list_routes():
+        if route.origin in event.affected_cities or route.destination in event.affected_cities:
+            asyncio.create_task(_scan_single_route(route.route_id))
+
+    return payload
+
+
+@app.post("/api/simulations/from-coordinates", status_code=201)
+async def create_simulation_from_coordinates(body: CreateCoordSimulationBody) -> dict:
+    """
+    Create a simulation by dropping an event at geographic coordinates.
+    Auto-detects which monitored ports and routes fall within the impact radius.
+    """
+    all_cities = [p.city for p in registry.list_ports()]
+    affected_cities = find_affected_cities(all_cities, body.lat, body.lon, body.radius_km)
+
+    # Detect routes whose path passes through the impact zone
+    route_triples = [
+        (r.route_id, r.origin, r.destination)
+        for r in route_registry.list_routes()
+    ]
+    affected_route_ids = find_affected_routes(route_triples, body.lat, body.lon, body.radius_km)
+
+    # Build a description if none provided
+    description = body.description or (
+        f"Event dropped at ({body.lat:.2f}°, {body.lon:.2f}°) "
+        f"with {body.radius_km:.0f} km impact radius."
+    )
+
+    event = simulations.create(
+        event_type=body.event_type,
+        affected_cities=affected_cities,
+        description=description,
+        severity=body.severity,
+        coordinates=[body.lat, body.lon],
+        radius_km=body.radius_km,
+    )
+    payload = event.model_dump(mode="json")
+    payload["affected_route_ids"] = affected_route_ids
+    await ws_manager.broadcast("simulation.created", payload)
+
+    # Immediately apply deterministic rules to ALL routes/ports (instant, no LLM)
+    await _apply_rules_all_routes()
+    await _apply_rules_all_ports()
+
+    # Then kick off full LLM re-scans for directly affected entities
+    for city in affected_cities:
+        asyncio.create_task(_scan_single(city))
+    for route_id in affected_route_ids:
+        asyncio.create_task(_scan_single_route(route_id))
 
     return payload
 
@@ -235,6 +406,21 @@ async def remove_simulation(sim_id: str) -> dict:
     for city in removed.affected_cities:
         asyncio.create_task(_scan_single(city))
 
+    # Re-scan routes whose endpoints were affected (clear cache first so stale
+    # CRITICAL result from the now-deleted sim isn't returned)
+    for route in route_registry.list_routes():
+        if route.origin in removed.affected_cities or route.destination in removed.affected_cities:
+            route_scanner.clear_cache(route.route_id)
+            asyncio.create_task(_scan_single_route(route.route_id))
+
+    # Also clear for coordinate-based sims that affected routes by geography
+    if removed.coordinates:
+        from backend.geo_utils import find_affected_routes
+        route_triples = [(r.route_id, r.origin, r.destination) for r in route_registry.list_routes()]
+        for rid in find_affected_routes(route_triples, removed.coordinates[0], removed.coordinates[1], removed.radius_km or 300):
+            route_scanner.clear_cache(rid)
+            asyncio.create_task(_scan_single_route(rid))
+
     return payload
 
 
@@ -246,6 +432,10 @@ async def clear_simulations() -> dict:
         await ws_manager.broadcast("simulation.removed", ev.model_dump(mode="json"))
     for city in affected:
         asyncio.create_task(_scan_single(city))
+    route_scanner.clear_cache()   # nuke entire cache — all sims gone
+    for route in route_registry.list_routes():
+        if route.origin in affected or route.destination in affected:
+            asyncio.create_task(_scan_single_route(route.route_id))
     return {"removed": len(removed)}
 
 
@@ -276,6 +466,75 @@ async def websocket_endpoint(ws: WebSocket) -> None:
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+async def _apply_rules_all_routes() -> None:
+    """
+    Re-apply deterministic risk rules to every route's *current* stored status.
+    No LLM call — purely geometric/sim-state check.
+    Broadcasts updates for any route whose risk level changes.
+    """
+    for route in route_registry.list_routes():
+        current = route_registry.get_status(route.route_id)
+        if current is None:
+            continue
+        updated = apply_route_rules(current, simulations)
+        if updated.risk_level != current.risk_level:
+            route_registry.update_status(route.route_id, updated)
+            await ws_manager.broadcast("route.status_updated", updated.model_dump(mode="json"))
+            if updated.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+                await ws_manager.broadcast("alert.route", updated.model_dump(mode="json"))
+
+async def _apply_rules_all_ports() -> None:
+    """Same — re-apply port rules to every current port status."""
+    for port in registry.list_ports():
+        current = registry.get_status(port.city)
+        if current is None:
+            continue
+        updated = apply_port_rules(current, simulations)
+        if updated.risk_level != current.risk_level:
+            registry.update_status(port.city, updated)
+            await ws_manager.broadcast(
+                "port.status_updated",
+                {"city": port.city, "status": updated.model_dump(mode="json")},
+            )
+            if updated.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+                await ws_manager.broadcast(
+                    "alert.new",
+                    {"city": port.city, "status": updated.model_dump(mode="json")},
+                )
+
+async def _scan_single_route(route_id: str) -> None:
+    route = route_registry.get_status(route_id)
+    if route is None:
+        return
+    try:
+        loop = asyncio.get_running_loop()
+        sim_context = (
+            simulations.context_for_city(route.origin)
+            + simulations.context_for_city(route.destination)
+            + simulations.context_for_route_geo(route.origin, route.destination)
+        )
+        status = await loop.run_in_executor(
+            None,
+            lambda: route_scanner.scan_route(
+                route_id, route.origin, route.destination,
+                sim_context, route.route_type,
+            ),
+        )
+        # Deterministic override: physical intersection with active events always wins
+        status = apply_route_rules(status, simulations)
+        route_registry.update_status(route_id, status)
+        await ws_manager.broadcast("route.status_updated", status.model_dump(mode="json"))
+        if status.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+            await ws_manager.broadcast("alert.route", status.model_dump(mode="json"))
+    except Exception as e:
+        print(f"[API] Route scan error for {route_id}: {e}")
+
+
+async def _scan_all_routes() -> None:
+    for route in route_registry.list_routes():
+        await _scan_single_route(route.route_id)
+
+
 async def _scan_single(city: str) -> None:
     try:
         loop = asyncio.get_running_loop()
@@ -283,6 +542,8 @@ async def _scan_single(city: str) -> None:
         status = await loop.run_in_executor(
             None, scanner.scan_port, city, sim_context
         )
+        # Deterministic override: proximity to active events always wins
+        status = apply_port_rules(status, simulations)
         registry.update_status(city, status)
         await ws_manager.broadcast(
             "port.status_updated",

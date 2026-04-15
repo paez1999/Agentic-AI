@@ -1,0 +1,166 @@
+{
+  "routes": [
+    "houston-to-veracruz",
+    "panama-to-houston",
+    "panama-to-miami",
+    "panama-to-tampa",
+    "panama-to-guatemala"
+  ],
+  "statuses": {
+    "houston-to-veracruz": {
+      "route_id": "houston-to-veracruz",
+      "origin": "Houston",
+      "destination": "Veracruz",
+      "route_type": "maritime",
+      "risk_level": "LOW",
+      "summary": "The maritime route from Houston to Veracruz has low risk, with favorable weather at both origin and destination, and no recent news indicating any significant disruptions to shipping lanes or ports.",
+      "origin_weather": {
+        "city": "Houston",
+        "country": "US",
+        "temperature_c": 28.85,
+        "feels_like_c": 31.72,
+        "humidity_pct": 66,
+        "wind_speed_ms": 8.23,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "destination_weather": {
+        "city": "Veracruz",
+        "country": "MX",
+        "temperature_c": 30.72,
+        "feels_like_c": 32.16,
+        "humidity_pct": 50,
+        "wind_speed_ms": 3.02,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T19:30:27.526458Z"
+    },
+    "panama-to-houston": {
+      "route_id": "panama-to-houston",
+      "origin": "Panama",
+      "destination": "Houston",
+      "route_type": "maritime",
+      "risk_level": "LOW",
+      "summary": "The maritime route from Panama to Houston has low risk, with clear weather at both origin and destination, and no recent news indicating disruptions or dangers specific to shipping.",
+      "origin_weather": {
+        "city": "Panama",
+        "country": "PA",
+        "temperature_c": 33.99,
+        "feels_like_c": 37.4,
+        "humidity_pct": 47,
+        "wind_speed_ms": 5.56,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "destination_weather": {
+        "city": "Houston",
+        "country": "US",
+        "temperature_c": 28.64,
+        "feels_like_c": 31.32,
+        "humidity_pct": 66,
+        "wind_speed_ms": 8.23,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T19:42:49.008606Z"
+    },
+    "panama-to-miami": {
+      "route_id": "panama-to-miami",
+      "origin": "Panama",
+      "destination": "Miami",
+      "route_type": "maritime",
+      "risk_level": "LOW",
+      "summary": "The maritime route from Panama to Miami has low risk, with clear weather at both origin and destination, and no recent news indicating disruptions or hazards.",
+      "origin_weather": {
+        "city": "Panama",
+        "country": "PA",
+        "temperature_c": 33.99,
+        "feels_like_c": 36.79,
+        "humidity_pct": 45,
+        "wind_speed_ms": 5.71,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "destination_weather": {
+        "city": "Miami",
+        "country": "US",
+        "temperature_c": 26.52,
+        "feels_like_c": 26.52,
+        "humidity_pct": 58,
+        "wind_speed_ms": 6.69,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T18:54:19.735401Z"
+    },
+    "panama-to-tampa": {
+      "route_id": "panama-to-tampa",
+      "origin": "Panama",
+      "destination": "Tampa",
+      "route_type": "air",
+      "risk_level": "LOW",
+      "summary": "The air route from Panama to Tampa has low risk, with clear skies at both origin and destination, and no recent news indicating any disruptions to flights in the region.",
+      "origin_weather": {
+        "city": "Panama",
+        "country": "PA",
+        "temperature_c": 33.99,
+        "feels_like_c": 37.4,
+        "humidity_pct": 47,
+        "wind_speed_ms": 5.56,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "destination_weather": {
+        "city": "Tampa",
+        "country": "US",
+        "temperature_c": 28.5,
+        "feels_like_c": 28.2,
+        "humidity_pct": 41,
+        "wind_speed_ms": 3.09,
+        "description": "cielo claro",
+        "condition_id": 800,
+        "condition_main": "Clear"
+      },
+      "scanned_at": "2026-04-15T19:54:37.103650Z"
+    },
+    "panama-to-guatemala": {
+      "route_id": "panama-to-guatemala",
+      "origin": "Panama",
+      "destination": "Guatemala",
+      "route_type": "terrestrial",
+      "risk_level": "LOW",
+      "summary": "The terrestrial route from Panama to Guatemala appears low risk given clear weather at both origin and destination, with no recent news indicating civil unrest or natural disasters in the region.",
+      "origin_weather": {
+        "city": "Panama",
+        "country": "PA",
+        "temperature_c": 33.99,
+        "feels_like_c": 37.4,
+        "humidity_pct": 47,
+        "wind_speed_ms": 5.56,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "destination_weather": {
+        "city": "Guatemala City",
+        "country": "GT",
+        "temperature_c": 26.91,
+        "feels_like_c": 26.75,
+        "humidity_pct": 39,
+        "wind_speed_ms": 3.09,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:06.795528Z"
+    }
+  }
+}

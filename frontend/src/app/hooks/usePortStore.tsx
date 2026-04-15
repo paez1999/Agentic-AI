@@ -13,6 +13,7 @@ import { SupplyChainWS } from "@/lib/websocket";
 import type {
   FullAnalysisJob,
   PortStatus,
+  RouteStatus,
   SimulationEvent,
 } from "@/lib/types";
 
@@ -20,6 +21,7 @@ interface PortStore {
   ports: PortStatus[];
   jobs: Record<string, FullAnalysisJob>;
   simulations: SimulationEvent[];
+  routes: RouteStatus[];
   connected: boolean;
   addPort: (city: string) => Promise<void>;
   removePort: (city: string) => Promise<void>;
@@ -30,6 +32,9 @@ interface PortStore {
   removeSimulation: (simId: string) => Promise<void>;
   refreshSimulations: () => Promise<void>;
   simulationsAffecting: (city: string) => SimulationEvent[];
+  addRoute: (origin: string, destination: string, route_type?: string) => Promise<void>;
+  removeRoute: (route_id: string) => Promise<void>;
+  scanRoute: (route_id: string) => Promise<void>;
 }
 
 const PortStoreContext = createContext<PortStore | null>(null);
@@ -38,6 +43,7 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
   const [ports, setPorts] = useState<PortStatus[]>([]);
   const [jobs, setJobs] = useState<Record<string, FullAnalysisJob>>({});
   const [simulations, setSimulations] = useState<SimulationEvent[]>([]);
+  const [routes, setRoutes] = useState<RouteStatus[]>([]);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<SupplyChainWS | null>(null);
 
@@ -53,9 +59,22 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const mergeRoute = useCallback((status: RouteStatus) => {
+    setRoutes((prev) => {
+      const idx = prev.findIndex((r) => r.route_id === status.route_id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = status;
+        return next;
+      }
+      return [...prev, status];
+    });
+  }, []);
+
   useEffect(() => {
     api.ports.list().then(setPorts).catch(console.error);
     api.simulations.list().then(setSimulations).catch(console.error);
+    api.routes.list().then(setRoutes).catch(console.error);
 
     const wsUrl =
       (process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000") + "/ws";
@@ -132,11 +151,24 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
       setSimulations((prev) => prev.filter((s) => s.sim_id !== sim.sim_id));
     });
 
+    ws.on("route.status_updated", (payload) => {
+      mergeRoute(payload as unknown as RouteStatus);
+    });
+
+    ws.on("route.added", (payload) => {
+      mergeRoute(payload as unknown as RouteStatus);
+    });
+
+    ws.on("route.removed", (payload) => {
+      const r = payload as unknown as { route_id: string };
+      setRoutes((prev) => prev.filter((x) => x.route_id !== r.route_id));
+    });
+
     ws.connect();
     setConnected(true);
 
     return () => ws.close();
-  }, [mergePort]);
+  }, [mergePort, mergeRoute]);
 
   const addPort = useCallback(async (city: string) => {
     await api.ports.add(city);
@@ -186,6 +218,18 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
     return job_id;
   }, [clearJobsForCity]);
 
+  const addRoute = useCallback(async (origin: string, destination: string, route_type?: string) => {
+    await api.routes.add(origin, destination, route_type);
+  }, []);
+
+  const removeRoute = useCallback(async (route_id: string) => {
+    await api.routes.remove(route_id);
+  }, []);
+
+  const scanRoute = useCallback(async (route_id: string) => {
+    await api.routes.scan(route_id);
+  }, []);
+
   const removeSimulation = useCallback(async (simId: string) => {
     await api.simulations.remove(simId);
   }, []);
@@ -207,6 +251,7 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
         ports,
         jobs,
         simulations,
+        routes,
         connected,
         addPort,
         removePort,
@@ -217,6 +262,9 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
         removeSimulation,
         refreshSimulations,
         simulationsAffecting,
+        addRoute,
+        removeRoute,
+        scanRoute,
       }}
     >
       {children}

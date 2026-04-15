@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 class AnalysisJobStore:
     def __init__(self) -> None:
         self._jobs: dict[str, FullAnalysisJob] = {}
+        self._event_bus = None
+        self._mcp_tools = None
 
     def get(self, job_id: str) -> FullAnalysisJob | None:
         return self._jobs.get(job_id)
@@ -57,7 +59,13 @@ class AnalysisJobStore:
     ) -> None:
         job = self._jobs[job_id]
         try:
-            orchestrator = create_orchestrator_for_port(city, simulation_context=simulation_context, avoid_polygon=avoid_polygon)
+            orchestrator = create_orchestrator_for_port(
+                city,
+                simulation_context=simulation_context,
+                avoid_polygon=avoid_polygon,
+                event_bus=self._event_bus,
+                mcp_tools=self._mcp_tools,
+            )
             loop = asyncio.get_running_loop()
             scenario_lines = [
                 f"Assess supply chain risk and response for the port city: {city}.",

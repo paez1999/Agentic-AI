@@ -5,100 +5,172 @@
     "Tampa",
     "Panama",
     "South Africa",
-    "Iran"
+    "Iran",
+    "Seattle",
+    "Miami",
+    "Guatemala",
+    "Puerto Rico"
   ],
   "statuses": {
     "Veracruz": {
       "city": "Veracruz",
       "risk_level": "LOW",
-      "summary": "The weather conditions in Veracruz are mild with high humidity but no severe weather events reported. The recent news headlines do not directly impact the port city.",
+      "summary": "The weather conditions in Veracruz are mild with scattered clouds, while recent news headlines focus on international political events unrelated to the port city.",
       "weather": {
         "city": "Veracruz",
         "country": "MX",
-        "temperature_c": 30.13,
-        "feels_like_c": 31.93,
-        "humidity_pct": 54,
-        "wind_speed_ms": 4.89,
-        "description": "nubes",
-        "condition_id": 804,
+        "temperature_c": 31.33,
+        "feels_like_c": 32.19,
+        "humidity_pct": 45,
+        "wind_speed_ms": 3.49,
+        "description": "nubes dispersas",
+        "condition_id": 802,
         "condition_main": "Clouds"
       },
-      "scanned_at": "2026-04-13T22:11:21.027643Z"
+      "scanned_at": "2026-04-15T20:00:48.364531Z"
     },
     "Houston": {
       "city": "Houston",
       "risk_level": "LOW",
-      "summary": "The weather conditions in Houston are mild with mostly cloudy skies, and recent global news headlines do not indicate any direct risks to the port city.",
+      "summary": "The weather conditions in Houston are mild with cloudy skies, and while there are ongoing geopolitical tensions, they do not directly impact the port city.",
       "weather": {
         "city": "Houston",
         "country": "US",
-        "temperature_c": 26.95,
-        "feels_like_c": 29.27,
-        "humidity_pct": 76,
-        "wind_speed_ms": 5.66,
-        "description": "nubes",
-        "condition_id": 804,
+        "temperature_c": 28.62,
+        "feels_like_c": 31.28,
+        "humidity_pct": 66,
+        "wind_speed_ms": 8.23,
+        "description": "nubes dispersas",
+        "condition_id": 802,
         "condition_main": "Clouds"
       },
-      "scanned_at": "2026-04-13T22:11:22.393300Z"
+      "scanned_at": "2026-04-15T20:00:49.664043Z"
     },
     "Tampa": {
       "city": "Tampa",
       "risk_level": "LOW",
-      "summary": "The weather conditions in Tampa are mild with low humidity and light winds. Current news headlines do not indicate any immediate risks to the port city.",
+      "summary": "The weather in Tampa is clear with low humidity and light winds, while recent news focuses on Atlantic hurricane season timing and international events unrelated to the city.",
       "weather": {
         "city": "Tampa",
         "country": "US",
-        "temperature_c": 28.66,
-        "feels_like_c": 28.44,
-        "humidity_pct": 42,
-        "wind_speed_ms": 3.6,
-        "description": "algo de nubes",
-        "condition_id": 801,
-        "condition_main": "Clouds"
-      },
-      "scanned_at": "2026-04-13T22:11:23.884792Z"
-    },
-    "Panama": {
-      "city": "Panama",
-      "risk_level": "LOW",
-      "summary": "The weather in Panama City is mostly cloudy with mild temperatures, while recent news headlines are unrelated to port risks.",
-      "weather": {
-        "city": "Panama",
-        "country": "PA",
-        "temperature_c": 31.77,
-        "feels_like_c": 33.08,
-        "humidity_pct": 46,
-        "wind_speed_ms": 5.27,
-        "description": "muy nuboso",
-        "condition_id": 803,
-        "condition_main": "Clouds"
-      },
-      "scanned_at": "2026-04-14T21:21:28.923619Z"
-    },
-    "South Africa": {
-      "city": "South Africa",
-      "risk_level": "MEDIUM",
-      "summary": "The current weather data is inconclusive due to an API error, but recent news headlines include a potential hurricane season, US-Iran port blockade tensions, and a school shooting in Turkey, suggesting a moderate risk level.",
-      "weather": null,
-      "scanned_at": "2026-04-14T21:20:44.536229Z"
-    },
-    "Iran": {
-      "city": "Iran",
-      "risk_level": "MEDIUM",
-      "summary": "The clear weather in Iran poses a low direct threat to the port city, but the ongoing US blockade and high number of executions increase overall political tensions and instability.",
-      "weather": {
-        "city": "Iran",
-        "country": "IR",
-        "temperature_c": 15.26,
-        "feels_like_c": 13.29,
-        "humidity_pct": 17,
-        "wind_speed_ms": 2.23,
+        "temperature_c": 28.5,
+        "feels_like_c": 28.2,
+        "humidity_pct": 41,
+        "wind_speed_ms": 3.09,
         "description": "cielo claro",
         "condition_id": 800,
         "condition_main": "Clear"
       },
-      "scanned_at": "2026-04-14T21:20:36.425658Z"
+      "scanned_at": "2026-04-15T20:00:50.950897Z"
+    },
+    "Panama": {
+      "city": "Panama",
+      "risk_level": "LOW",
+      "summary": "The weather conditions in Panama are mostly cloudy with moderate humidity and low wind speed, posing no immediate threat to the port city. The recent news headlines do not directly impact Panama or involve any simulated events, further supporting a low risk assessment.",
+      "weather": {
+        "city": "Panama",
+        "country": "PA",
+        "temperature_c": 33.99,
+        "feels_like_c": 37.4,
+        "humidity_pct": 47,
+        "wind_speed_ms": 5.56,
+        "description": "muy nuboso",
+        "condition_id": 803,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:52.767054Z"
+    },
+    "South Africa": {
+      "city": "South Africa",
+      "risk_level": "LOW",
+      "summary": "The weather data error indicates no current severe weather threats, while recent news focuses on political events unrelated to port risks.",
+      "weather": null,
+      "scanned_at": "2026-04-15T20:00:53.968696Z"
+    },
+    "Iran": {
+      "city": "Iran",
+      "risk_level": "LOW",
+      "summary": "The weather conditions in Iran are mild with low humidity and light winds, while recent news headlines focus on international political events unrelated to port risks.",
+      "weather": {
+        "city": "Iran",
+        "country": "IR",
+        "temperature_c": 15.33,
+        "feels_like_c": 13.49,
+        "humidity_pct": 22,
+        "wind_speed_ms": 8.69,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:55.256859Z"
+    },
+    "Seattle": {
+      "city": "Seattle",
+      "risk_level": "LOW",
+      "summary": "The current weather conditions in Seattle are mild with high humidity and light winds. Recent news headlines focus on international political events unrelated to port operations or safety. No simulated events affecting the port city have been detected.",
+      "weather": {
+        "city": "Seattle",
+        "country": "US",
+        "temperature_c": 6.69,
+        "feels_like_c": 3.7,
+        "humidity_pct": 88,
+        "wind_speed_ms": 4.47,
+        "description": "nubes",
+        "condition_id": 804,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:56.678483Z"
+    },
+    "Miami": {
+      "city": "Miami",
+      "risk_level": "LOW",
+      "summary": "The current weather conditions in Miami are mild with low humidity and light winds, while recent news headlines focus on international political events unrelated to port risks. No simulated events affecting the port city have been detected.",
+      "weather": {
+        "city": "Miami",
+        "country": "US",
+        "temperature_c": 26.02,
+        "feels_like_c": 26.02,
+        "humidity_pct": 61,
+        "wind_speed_ms": 1.79,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:41.076499Z"
+    },
+    "Guatemala": {
+      "city": "Guatemala",
+      "risk_level": "LOW",
+      "summary": "The weather conditions in Guatemala City are favorable with mostly cloudy skies and low humidity. Recent news headlines do not indicate any direct threats to the port city.",
+      "weather": {
+        "city": "Guatemala City",
+        "country": "GT",
+        "temperature_c": 26.91,
+        "feels_like_c": 26.75,
+        "humidity_pct": 39,
+        "wind_speed_ms": 3.09,
+        "description": "nubes dispersas",
+        "condition_id": 802,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:00:46.167937Z"
+    },
+    "Puerto Rico": {
+      "city": "Puerto Rico",
+      "risk_level": "LOW",
+      "summary": "The weather conditions are favorable with no current simulated events or major news stories impacting Puerto Rico's port operations.",
+      "weather": {
+        "city": "Puerto Rico",
+        "country": "AR",
+        "temperature_c": 23.67,
+        "feels_like_c": 24.47,
+        "humidity_pct": 91,
+        "wind_speed_ms": 2.01,
+        "description": "nubes",
+        "condition_id": 804,
+        "condition_main": "Clouds"
+      },
+      "scanned_at": "2026-04-15T20:15:19.397064Z"
     }
   }
 }

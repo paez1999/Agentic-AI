@@ -51,6 +51,7 @@ class PortRiskScanner:
         model = os.environ.get("LLM_MODEL", "hermes3:8b")
         self._client = OpenAI(base_url=f"{llm_url}/v1", api_key=api_key)
         self._model = model
+        self._cache: dict[str, tuple[PortStatus, datetime]] = {}
 
     def scan_port(self, city: str, simulation_context: str = "") -> PortStatus:
         """Lightweight scan: fetch weather + news, one LLM call, return PortStatus. ~5-10s.
@@ -58,6 +59,11 @@ class PortRiskScanner:
         When simulation_context is non-empty, it is injected into the prompt so the LLM
         factors the simulated scenario into its risk classification.
         """
+        if not simulation_context and city in self._cache:
+            cached_status, cached_at = self._cache[city]
+            if (datetime.now(timezone.utc) - cached_at).total_seconds() < 300:
+                return cached_status
+
         weather_raw = get_weather(city)
         news_raw = get_news(f"port {city} weather storm hurricane risk")
 
@@ -108,10 +114,13 @@ class PortRiskScanner:
 
         risk_level, summary = _parse_risk_response(raw_text)
 
-        return PortStatus(
+        status = PortStatus(
             city=city,
             risk_level=risk_level,
             summary=summary,
             weather=weather_data if "error" not in weather_data else None,
             scanned_at=datetime.now(timezone.utc),
         )
+        if not simulation_context:
+            self._cache[city] = (status, datetime.now(timezone.utc))
+        return status
