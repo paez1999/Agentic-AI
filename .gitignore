@@ -14,3 +14,13 @@ frontend/.env.local
 
 # Claude Code internal
 .claude/
+
+# Graphify cache
+graphify-out/cache/
+
+# Build artifacts
+frontend/tsconfig.tsbuildinfo
+
+# Junk files
+171
+[frontend
