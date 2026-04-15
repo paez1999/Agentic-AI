@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-_MAP_DIR = Path("output")
+_MAP_DIR = Path(__file__).parent.parent / "output"
 
 from backend.models import FullAnalysisJob
 from backend.orchestrator_factory import create_orchestrator_for_port

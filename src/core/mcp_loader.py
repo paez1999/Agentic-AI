@@ -11,6 +11,7 @@ Usage:
 """
 
 import asyncio
+import os
 import sys
 import threading
 from typing import TYPE_CHECKING
@@ -59,6 +60,7 @@ class MCPServerConnection:
         params = StdioServerParameters(
             command=sys.executable,
             args=[self._server_script],
+            env=dict(os.environ),
         )
         # Enter the stdio transport context — starts the subprocess
         self._client_cm = stdio_client(params)

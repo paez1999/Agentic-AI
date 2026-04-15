@@ -202,12 +202,6 @@ class Orchestrator:
                     output_path=map_output_path,
                 )
                 print(f"\n[Map] Saved to {map_path}")
-                import threading
-                threading.Thread(
-                    target=webbrowser.open,
-                    args=("file://" + map_path,),
-                    daemon=True,
-                ).start()
         except Exception as e:
             print(f"\n[Map] Skipped: {e}")
 
