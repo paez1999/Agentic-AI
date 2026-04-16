@@ -11,6 +11,8 @@ import json
 import math
 import os
 from functools import lru_cache
+from urllib.parse import quote_plus
+from urllib.request import urlopen
 
 import httpx
 
@@ -28,6 +30,28 @@ CITY_COORDS: dict[str, list[float]] = {
     "los angeles":    [-118.2437, 34.0522],
     "new york":       [-74.0060, 40.7128],
 }
+
+# ── Geocoding fallback (cached per city name) ─────────────────────────────────
+@lru_cache(maxsize=256)
+def _geocode(city: str) -> list[float] | None:
+    """Return [lon, lat] for any city via Open-Meteo geocoding (free, no key)."""
+    try:
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={quote_plus(city)}&count=1&language=en&format=json"
+        with urlopen(url, timeout=5) as resp:
+            data = json.loads(resp.read())
+        results = data.get("results") or []
+        if results:
+            return [float(results[0]["longitude"]), float(results[0]["latitude"])]
+    except Exception:
+        pass
+    return None
+
+
+def _resolve_coord(city: str) -> list[float] | None:
+    """Look up [lon, lat] — CITY_COORDS first, geocoding fallback."""
+    key = city.lower().strip()
+    return CITY_COORDS.get(key) or _geocode(key)
+
 
 # ── Maritime shipping-lane waypoints [lon, lat] ────────────────────────────────
 # Key: frozenset of two lowercase city names (order-independent)
@@ -276,8 +300,8 @@ def _ors_geometry(origin: str, destination: str) -> list[list[float]] | None:
     api_key = os.environ.get("ORS_API_KEY", "")
     if not api_key:
         return None
-    o = CITY_COORDS.get(origin.lower())
-    d = CITY_COORDS.get(destination.lower())
+    o = _resolve_coord(origin)
+    d = _resolve_coord(destination)
     if not o or not d:
         return None
     try:
@@ -309,8 +333,8 @@ def get_geometry(
     d_key = destination.lower().strip()
     key   = frozenset({o_key, d_key})
 
-    o_coord = CITY_COORDS.get(o_key)
-    d_coord = CITY_COORDS.get(d_key)
+    o_coord = _resolve_coord(o_key)
+    d_coord = _resolve_coord(d_key)
 
     if route_type == "maritime":
         if key in _MARITIME:
