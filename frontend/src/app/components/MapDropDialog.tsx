@@ -178,13 +178,17 @@ export function MapDropDialog({ ports, routes, onClose, onCreated }: MapDropDial
     portLayerRef.current = [];
     ports.forEach((p) => {
       const c = CITY_COORDS[p.city.toLowerCase()];
-      if (!c) return;
+      const lat = c ? c[1] : p.lat;
+      const lon = c ? c[0] : p.lon;
+      if (lat == null || lon == null) return;
+      // Shim so the rest of the block can still use `c` as [lon, lat]
+      const c2: [number, number] = [lon, lat];
       const icon = L.divIcon({
         className: "",
         html: `<div style="width:10px;height:10px;background:#38bdf8;border:2px solid #0ea5e9;border-radius:50%;box-shadow:0 0 6px #38bdf8"></div>`,
         iconSize: [10, 10], iconAnchor: [5, 5],
       });
-      const m = L.marker([c[1], c[0]], { icon }).addTo(map).bindTooltip(p.city);
+      const m = L.marker([c2[1], c2[0]], { icon }).addTo(map).bindTooltip(p.city);
       portLayerRef.current.push(m);
     });
   }, [ports, leafletReady]);
@@ -224,12 +228,23 @@ export function MapDropDialog({ ports, routes, onClose, onCreated }: MapDropDial
     const affectedCities = ports
       .filter((p) => {
         const c = CITY_COORDS[p.city.toLowerCase()];
-        return c && haversineKm(pin.lat, pin.lon, c[1], c[0]) <= radiusKm;
+        const lat = c ? c[1] : p.lat;
+        const lon = c ? c[0] : p.lon;
+        if (lat == null || lon == null) return false;
+        return haversineKm(pin.lat, pin.lon, lat, lon) <= radiusKm;
       })
       .map((p) => p.city);
 
     const affectedRoutes = routes
-      .filter((r) => routeIntersects(r.origin, r.destination, pin.lat, pin.lon, radiusKm))
+      .filter((r) => {
+        const geo = routeGeometry[r.route_id];
+        if (geo && geo.length > 0) {
+          // Use actual fetched route geometry — works for any city pair
+          return geo.some(([lon, lat]) => haversineKm(pin.lat, pin.lon, lat, lon) <= radiusKm);
+        }
+        // Fallback: straight-line interpolation via CITY_COORDS
+        return routeIntersects(r.origin, r.destination, pin.lat, pin.lon, radiusKm);
+      })
       .map((r) => `${r.origin} → ${r.destination}`);
 
     setAffectedPreview({ cities: affectedCities, routes: affectedRoutes });
