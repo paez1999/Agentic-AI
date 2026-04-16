@@ -406,20 +406,13 @@ async def remove_simulation(sim_id: str) -> dict:
     for city in removed.affected_cities:
         asyncio.create_task(_scan_single(city))
 
-    # Re-scan routes whose endpoints were affected (clear cache first so stale
-    # CRITICAL result from the now-deleted sim isn't returned)
+    # Re-scan ALL routes — apply_route_rules only escalates, never de-escalates,
+    # so any route previously lifted by this sim must be re-assessed from scratch.
+    # Scope-limited approaches (endpoint match, radius check) miss polygon events
+    # and routes with cities not in CITY_COORDS, so we reset everything.
+    route_scanner.clear_cache()
     for route in route_registry.list_routes():
-        if route.origin in removed.affected_cities or route.destination in removed.affected_cities:
-            route_scanner.clear_cache(route.route_id)
-            asyncio.create_task(_scan_single_route(route.route_id))
-
-    # Also clear for coordinate-based sims that affected routes by geography
-    if removed.coordinates:
-        from backend.geo_utils import find_affected_routes
-        route_triples = [(r.route_id, r.origin, r.destination) for r in route_registry.list_routes()]
-        for rid in find_affected_routes(route_triples, removed.coordinates[0], removed.coordinates[1], removed.radius_km or 300):
-            route_scanner.clear_cache(rid)
-            asyncio.create_task(_scan_single_route(rid))
+        asyncio.create_task(_scan_single_route(route.route_id))
 
     return payload
 
