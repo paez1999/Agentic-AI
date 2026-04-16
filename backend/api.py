@@ -443,12 +443,13 @@ async def clear_simulations() -> dict:
 async def reset_all_threats() -> dict:
     """Force all ports to LOW risk and kick off a fresh scan."""
     from backend.models import PortStatus as _PortStatus
-    for city in registry.list_ports():
+    for port in registry.list_ports():
+        city = port.city
         clean = _PortStatus(city=city, risk_level=RiskLevel.LOW, summary="Awaiting scan")
         registry.update_status(city, clean)
         await ws_manager.broadcast("port.status_updated", {"status": clean.model_dump(mode="json")})
     asyncio.create_task(_scan_all())
-    return {"reset": registry.list_ports()}
+    return {"reset": [p.city for p in registry.list_ports()]}
 
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────
@@ -535,6 +536,26 @@ async def _scan_all_routes() -> None:
         await _scan_single_route(route.route_id)
 
 
+async def _geocode_city(city: str) -> tuple[float, float] | None:
+    """Return (lat, lon) for a city name using the free Open-Meteo geocoding API."""
+    import json
+    from urllib.parse import quote_plus
+    from urllib.request import urlopen
+    try:
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={quote_plus(city)}&count=1&language=en&format=json"
+        loop = asyncio.get_running_loop()
+        def _fetch():
+            with urlopen(url, timeout=5) as resp:
+                return json.loads(resp.read())
+        data = await loop.run_in_executor(None, _fetch)
+        results = data.get("results") or []
+        if results:
+            return float(results[0]["latitude"]), float(results[0]["longitude"])
+    except Exception:
+        pass
+    return None
+
+
 async def _scan_single(city: str) -> None:
     try:
         loop = asyncio.get_running_loop()
@@ -544,6 +565,14 @@ async def _scan_single(city: str) -> None:
         )
         # Deterministic override: proximity to active events always wins
         status = apply_port_rules(status, simulations)
+        # Preserve or fetch coordinates so the map can pin this node
+        existing = registry.get_status(city)
+        if existing and existing.lat is not None:
+            status.lat, status.lon = existing.lat, existing.lon
+        else:
+            coords = await _geocode_city(city)
+            if coords:
+                status.lat, status.lon = coords
         registry.update_status(city, status)
         await ws_manager.broadcast(
             "port.status_updated",

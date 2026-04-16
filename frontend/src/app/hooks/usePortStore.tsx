@@ -99,6 +99,8 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
                 summary: "Scanning…",
                 weather: null,
                 scanned_at: null,
+                lat: null,
+                lon: null,
               },
             ]
       );

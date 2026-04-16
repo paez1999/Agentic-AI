@@ -20,6 +20,8 @@ class PortStatus(BaseModel):
     summary: str = "Not yet scanned"
     weather: dict[str, Any] | None = None
     scanned_at: datetime | None = None
+    lat: float | None = None
+    lon: float | None = None
 
 
 class RouteStatus(BaseModel):

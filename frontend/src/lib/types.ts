@@ -17,6 +17,8 @@ export interface PortStatus {
   summary: string;
   weather: WeatherData | null;
   scanned_at: string | null;
+  lat: number | null;
+  lon: number | null;
 }
 
 export type RouteType = "maritime" | "terrestrial" | "air";

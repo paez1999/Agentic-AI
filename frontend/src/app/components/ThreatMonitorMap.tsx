@@ -159,14 +159,16 @@ export function ThreatMonitorMap({ simulations, ports, routes, onClose }: Threat
 
     ports.forEach((p) => {
       const c = CITY_COORDS[p.city.toLowerCase()];
-      if (!c) return;
+      const lat = c ? c[1] : p.lat;
+      const lon = c ? c[0] : p.lon;
+      if (lat == null || lon == null) return;
       const color = RISK_COLORS[p.risk_level] ?? "#64748b";
       const icon  = L.divIcon({
         className: "",
         html: `<div style="width:14px;height:14px;background:${color};border:2px solid rgba(255,255,255,0.25);border-radius:50%;box-shadow:0 0 8px ${color}"></div>`,
         iconSize: [14, 14], iconAnchor: [7, 7],
       });
-      const m = L.marker([c[1], c[0]], { icon }).addTo(map)
+      const m = L.marker([lat, lon], { icon }).addTo(map)
         .bindTooltip(`<strong>${p.city}</strong><br>Risk: ${p.risk_level}`, { sticky: true });
       portLayerRef.current.push(m);
     });
