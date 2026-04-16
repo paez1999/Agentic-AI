@@ -70,6 +70,36 @@ def _geometry_intersects(
     return False
 
 
+def _point_in_polygon(lon: float, lat: float, polygon: list[list[float]]) -> bool:
+    """Ray-casting point-in-polygon test. polygon is [[lon, lat], ...]."""
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i][0], polygon[i][1]
+        xj, yj = polygon[j][0], polygon[j][1]
+        if ((yi > lat) != (yj > lat)) and (
+            lon < (xj - xi) * (lat - yi) / (yj - yi) + xi
+        ):
+            inside = not inside
+        j = i
+    return inside
+
+
+def _geometry_intersects_polygon(
+    origin: str,
+    destination: str,
+    route_type: str,
+    polygon: list[list[float]],
+) -> bool:
+    """Check whether any waypoint of the route falls inside the given polygon."""
+    waypoints = get_geometry(origin, destination, route_type)
+    for lon, lat in waypoints:
+        if _point_in_polygon(lon, lat, polygon):
+            return True
+    return False
+
+
 def apply_route_rules(
     status: RouteStatus,
     sims: SimulationStore,
@@ -80,7 +110,8 @@ def apply_route_rules(
     for ev in sims.list():
         # Endpoint city name match → at least HIGH
         if ev.affected_cities and (
-            status.origin in ev.affected_cities or status.destination in ev.affected_cities
+            status.origin.lower() in [c.lower() for c in ev.affected_cities]
+            or status.destination.lower() in [c.lower() for c in ev.affected_cities]
         ):
             floor = _max(floor, RiskLevel.HIGH)
 
@@ -90,6 +121,17 @@ def apply_route_rules(
             if _geometry_intersects(
                 status.origin, status.destination,
                 status.route_type, lat, lon, ev.radius_km,
+            ):
+                if ev.severity in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+                    floor = _max(floor, RiskLevel.CRITICAL)
+                else:
+                    floor = _max(floor, RiskLevel.HIGH)
+
+        # Polygon-based intersection (hurricane zones and other area events)
+        if ev.polygon and len(ev.polygon) >= 3:
+            if _geometry_intersects_polygon(
+                status.origin, status.destination,
+                status.route_type, ev.polygon,
             ):
                 if ev.severity in (RiskLevel.HIGH, RiskLevel.CRITICAL):
                     floor = _max(floor, RiskLevel.CRITICAL)
