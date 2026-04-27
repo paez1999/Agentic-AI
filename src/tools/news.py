@@ -97,7 +97,7 @@ def get_local_news(city: str, country_code: str, lang: str = "en", max_results: 
     """
     import json as _json
     from pathlib import Path
-    _feeds_path = Path(__file__).parent.parent.parent / "backend" / "data" / "country_feeds.json"
+    _feeds_path = Path(__file__).parent.parent.parent / "backend" / "static_data" / "country_feeds.json"
     try:
         country_feeds = _json.loads(_feeds_path.read_text(encoding="utf-8"))
     except Exception:

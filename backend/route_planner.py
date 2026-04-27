@@ -13,7 +13,7 @@ from backend.geo_utils import slerp_gc, _geocode
 
 logger = logging.getLogger(__name__)
 
-_GRAPH_PATH = Path(__file__).parent / "data" / "maritime_graph.json"
+_GRAPH_PATH = Path(__file__).parent / "static_data" / "maritime_graph.json"
 
 
 def _haversine(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
