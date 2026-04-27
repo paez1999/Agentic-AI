@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir \
     "websockets>=12.0" \
     "mcp[cli]>=1.0" \
     "nats-py>=2.0" \
-    "cloudevents>=1.0"
+    "cloudevents>=1.0" \
+    "searoute>=1.5"
 
 COPY . .
 

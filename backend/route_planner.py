@@ -159,6 +159,32 @@ def _get_graph() -> MaritimeGraph:
     return _graph
 
 
+def _searoute_plan(origin: str, destination: str) -> dict:
+    """Route using the searoute shipping-lane graph — accurate for any city pair worldwide.
+
+    searoute uses @lru_cache on its internal Marnet so the graph loads once per process.
+    """
+    try:
+        from searoute import searoute as _sr
+        o = _geocode(origin)
+        d = _geocode(destination)
+        if not (o and d):
+            return {"waypoints": [], "chokepoints_crossed": [], "distance_km": 0, "avoid_applied": []}
+        feature = _sr(tuple(o), tuple(d), units="km")
+        coords = feature["geometry"]["coordinates"]
+        dist = feature.get("properties", {}).get("length", 0)
+        if coords:
+            return {
+                "waypoints": coords,
+                "chokepoints_crossed": [],
+                "distance_km": round(float(dist)),
+                "avoid_applied": [],
+            }
+    except Exception as e:
+        logger.warning("searoute failed %s→%s: %s", origin, destination, e)
+    return {"waypoints": [], "chokepoints_crossed": [], "distance_km": 0, "avoid_applied": []}
+
+
 def _slerp_fallback(origin: str, destination: str) -> dict:
     try:
         o = _geocode(origin)
@@ -178,17 +204,27 @@ def plan(origin: str, destination: str, mode: str = "maritime", avoid: list = []
         return _slerp_fallback(origin, destination)
 
     if mode == "maritime":
-        try:
-            g = _get_graph()
-            origin_id = g.resolve_node(origin)
-            dest_id = g.resolve_node(destination)
-            if origin_id and dest_id:
-                result = g.plan(origin_id, dest_id, avoid)
-                if result["waypoints"]:
-                    return result
-            logger.warning("Maritime: could not resolve '%s'→'%s' in graph", origin, destination)
-        except Exception as e:
-            logger.warning("Maritime plan error: %s", e)
+        # Without avoidance: searoute gives accurate worldwide shipping-lane routing
+        if not avoid:
+            result = _searoute_plan(origin, destination)
+            if result["waypoints"]:
+                return result
+        else:
+            # With active simulation avoidance: use Dijkstra on the chokepoint graph,
+            # fall back to unavoided searoute if graph can't route the pair
+            try:
+                g = _get_graph()
+                origin_id = g.resolve_node(origin)
+                dest_id = g.resolve_node(destination)
+                if origin_id and dest_id:
+                    result = g.plan(origin_id, dest_id, avoid)
+                    if result["waypoints"]:
+                        return result
+            except Exception as e:
+                logger.warning("Maritime graph error: %s", e)
+            result = _searoute_plan(origin, destination)
+            if result["waypoints"]:
+                return result
         return _slerp_fallback(origin, destination)
 
     # Terrestrial — try ORS, fall back to slerp
