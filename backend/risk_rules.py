@@ -141,3 +141,42 @@ def apply_route_rules(
     if floor == status.risk_level:
         return status
     return status.model_copy(update={"risk_level": floor})
+
+
+def apply_route_propagation(status: PortStatus, city: str, route_registry) -> PortStatus:
+    """Escalate port risk based on connected route risk levels (never de-escalates)."""
+    routes = [
+        r for r in route_registry.list_routes()
+        if r.origin.lower() == city.lower() or r.destination.lower() == city.lower()
+    ]
+    if not routes:
+        return status
+
+    critical_count = sum(1 for r in routes if r.risk_level == RiskLevel.CRITICAL)
+    high_count = sum(1 for r in routes if r.risk_level == RiskLevel.HIGH)
+    all_critical_or_high = all(r.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL) for r in routes)
+
+    floor = status.risk_level
+    isolated = status.isolated
+
+    if critical_count >= 2 or (all_critical_or_high and len(routes) > 0 and critical_count >= 1):
+        floor = _max(floor, RiskLevel.CRITICAL)
+        isolated = True
+    elif critical_count == 1:
+        floor = _max(floor, RiskLevel.HIGH)
+    elif high_count >= 2:
+        floor = _max(floor, RiskLevel.HIGH)
+    elif high_count == 1:
+        floor = _max(floor, RiskLevel.MEDIUM)
+
+    affected = [
+        {"route_id": r.route_id, "risk_level": r.risk_level.value,
+         "origin": r.origin, "destination": r.destination}
+        for r in routes if r.risk_level in (RiskLevel.HIGH, RiskLevel.CRITICAL)
+    ]
+
+    return status.model_copy(update={
+        "risk_level": floor,
+        "isolated": isolated,
+        "affected_routes": affected if affected else status.affected_routes,
+    })

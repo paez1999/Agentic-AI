@@ -62,5 +62,26 @@ def confirm_action(action: str) -> str:
     return _confirm_action(action)
 
 
+@mcp.tool()
+def plan_route(
+    origin: str,
+    destination: str,
+    mode: str = "maritime",
+    avoid: list = [],
+) -> str:
+    """Plan an optimal route between two ports/cities.
+
+    mode: 'maritime' (ocean corridors), 'air' (great circle), or 'terrestrial' (road).
+    avoid: list of chokepoint names to route around — valid values:
+      suez, panama, bab-el-mandeb, red-sea-corridor, hormuz, malacca,
+      gibraltar, english-channel-dover, bosphorus, cape-horn, cape-good-hope.
+    Returns JSON with waypoints, chokepoints_crossed, distance_km, avoid_applied.
+    """
+    import json
+    from backend import route_planner as _route_planner
+    result = _route_planner.plan(origin, destination, mode, avoid)
+    return json.dumps(result)
+
+
 if __name__ == "__main__":
     mcp.run()

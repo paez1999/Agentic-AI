@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Chain Risk Intelligence — Poster</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #111827; font-family: 'Inter', 'Segoe UI', sans-serif; padding: 24px; }
+
+    .poster-wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #020917;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1e3a5f;
+      box-shadow: 0 0 60px rgba(14,165,233,0.15);
+    }
+
+    .top-strip {
+      background: linear-gradient(90deg, #0ea5e9 0%, #6366f1 50%, #10b981 100%);
+      height: 4px;
+    }
+
+    /* HERO */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 28px 36px 20px;
+      background: radial-gradient(ellipse at top left, #0c2340 0%, #020917 60%);
+      border-bottom: 1px solid #1e293b;
+    }
+    .hero-left { display: flex; flex-direction: column; justify-content: center; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.4);
+      color: #38bdf8; font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+      width: fit-content; margin-bottom: 12px;
+    }
+    .hero-tag::before { content: '●'; color: #38bdf8; font-size: 8px; }
+    .hero-title {
+      font-size: 30px; font-weight: 900; color: #fff; line-height: 1.1;
+      letter-spacing: -1px; margin-bottom: 8px;
+    }
+    .hero-title span { color: #38bdf8; }
+    .hero-problem {
+      font-size: 12px; color: #94a3b8; line-height: 1.6; max-width: 420px;
+      border-left: 3px solid #0ea5e9; padding-left: 12px; margin-top: 10px;
+    }
+    .hero-problem strong { color: #e2e8f0; display: block; margin-bottom: 2px; }
+    .hero-right {
+      display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 10px;
+    }
+    .metric-row { display: flex; gap: 10px; }
+    .metric-box {
+      background: rgba(255,255,255,0.04); border: 1px solid #1e3a5f;
+      border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 80px;
+    }
+    .metric-num { font-size: 26px; font-weight: 900; color: #38bdf8; }
+    .metric-num.green { color: #10b981; }
+    .metric-num.purple { color: #818cf8; }
+    .metric-num.amber { color: #f59e0b; }
+    .metric-label { font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .live-dot {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .live-dot-circle {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981; box-shadow: 0 0 6px #10b981;
+    }
+    .live-dot span { font-size: 10px; color: #64748b; }
+
+    /* MAIN GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 0.9fr;
+      gap: 1px;
+      background: #1e293b;
+    }
+    .col { background: #020917; padding: 20px 24px; }
+    .col-title {
+      font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+      color: #38bdf8; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+    }
+    .col-title::before { content: ''; display: block; width: 16px; height: 2px; background: currentColor; }
+
+    /* AGENT CARDS */
+    .agent-card {
+      background: rgba(255,255,255,0.03); border: 1px solid #1e3a5f;
+      border-radius: 8px; padding: 12px; margin-bottom: 8px;
+    }
+    .agent-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .agent-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .agent-icon.blue { background: rgba(59,130,246,0.2); }
+    .agent-icon.green { background: rgba(16,185,129,0.2); }
+    .agent-icon.amber { background: rgba(245,158,11,0.2); }
+    .agent-name { font-size: 11px; font-weight: 700; color: #e2e8f0; }
+    .agent-role { font-size: 9px; color: #64748b; }
+    .agent-desc { font-size: 10px; color: #94a3b8; line-height: 1.5; }
+    .agent-tools { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .tool-tag {
+      font-size: 9px; padding: 2px 7px; border-radius: 4px; font-weight: 600; border: 1px solid;
+    }
+    .tool-tag.blue { color: #60a5fa; border-color: rgba(96,165,250,0.3); background: rgba(59,130,246,0.1); }
+    .tool-tag.green { color: #34d399; border-color: rgba(52,211,153,0.3); background: rgba(16,185,129,0.1); }
+    .tool-tag.amber { color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(245,158,11,0.1); }
+    .tool-tag.purple { color: #a78bfa; border-color: rgba(167,139,250,0.3); background: rgba(99,102,241,0.1); }
+
+    .flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: #334155; font-size: 16px; margin: 2px 0;
+    }
+
+    /* CAPABILITIES */
+    .cap-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 9px; }
+    .cap-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+    .cap-text { font-size: 10px; color: #94a3b8; line-height: 1.5; }
+    .cap-text strong { color: #e2e8f0; display: block; font-size: 10px; }
+
+    /* LIMITATIONS */
+    .limit-item { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 9px; }
+    .limit-badge {
+      font-size: 8px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3);
+      flex-shrink: 0; margin-top: 2px; white-space: nowrap;
+    }
+    .limit-text { font-size: 10px; color: #94a3b8; line-height: 1.5; }
+    .divider { border-top: 1px solid #1e293b; margin: 14px 0; }
+
+    /* INVESTMENT */
+    .inv-item {
+      background: linear-gradient(135deg, rgba(14,165,233,0.08) 0%, rgba(99,102,241,0.08) 100%);
+      border: 1px solid rgba(14,165,233,0.2);
+      border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;
+    }
+    .inv-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .inv-emoji { font-size: 14px; }
+    .inv-title { font-size: 10px; font-weight: 700; color: #38bdf8; }
+    .inv-desc { font-size: 9px; color: #64748b; line-height: 1.5; }
+
+    /* TECH STRIP */
+    .tech-strip {
+      background: #030e1a; padding: 12px 36px;
+      border-top: 1px solid #1e293b; border-bottom: 1px solid #1e293b;
+      display: flex; align-items: center;
+    }
+    .tech-label {
+      font-size: 9px; color: #475569; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; margin-right: 20px; white-space: nowrap;
+    }
+    .tech-tags { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .tech-tag {
+      font-size: 9px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+      border: 1px solid; white-space: nowrap;
+    }
+    .tech-tag.sky    { color: #38bdf8; border-color: rgba(56,189,248,0.3);  background: rgba(14,165,233,0.08); }
+    .tech-tag.indigo { color: #818cf8; border-color: rgba(129,140,248,0.3); background: rgba(99,102,241,0.08); }
+    .tech-tag.green  { color: #34d399; border-color: rgba(52,211,153,0.3);  background: rgba(16,185,129,0.08); }
+    .tech-tag.amber  { color: #fbbf24; border-color: rgba(251,191,36,0.3);  background: rgba(245,158,11,0.08); }
+    .tech-tag.pink   { color: #f472b6; border-color: rgba(244,114,182,0.3); background: rgba(236,72,153,0.08); }
+    .tech-tag.gray   { color: #94a3b8; border-color: rgba(148,163,184,0.3); background: rgba(100,116,139,0.08); }
+
+    /* FOOTER */
+    .footer {
+      padding: 14px 36px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #020917;
+    }
+    .footer-name { font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .footer-sub { font-size: 9px; color: #475569; margin-top: 2px; }
+    .footer-cta {
+      background: linear-gradient(90deg, #0ea5e9, #6366f1);
+      color: #fff; font-size: 11px; font-weight: 700;
+      padding: 10px 24px; border-radius: 8px;
+      letter-spacing: 0.5px; text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="poster-wrap">
+  <div class="top-strip"></div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Prueba de Concepto · 2025</div>
+      <div class="hero-title">
+        Inteligencia Artificial<br>
+        <span>Multi-Agente</span> para<br>
+        Supply Chain Risk
+      </div>
+      <div class="hero-problem">
+        <strong>El factor humano no puede monitorear el entorno global 24/7.</strong>
+        Los equipos pierden señales críticas de riesgo porque carecen de la imagen completa — y se dan cuenta cuando ya es demasiado tarde.
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="metric-row">
+        <div class="metric-box">
+          <div class="metric-num">3</div>
+          <div class="metric-label">Agentes IA</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num green">24/7</div>
+          <div class="metric-label">Monitoreo</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num purple">4</div>
+          <div class="metric-label">MCP Servers</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num amber">∞</div>
+          <div class="metric-label">Escalable</div>
+        </div>
+      </div>
+      <div class="live-dot">
+        <div class="live-dot-circle"></div>
+        <span>Sistema activo — Veracruz · Houston · Tampa</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- COL 1: AGENTES -->
+    <div class="col">
+      <div class="col-title">Sistema de Agentes</div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon blue">🌩️</div>
+          <div>
+            <div class="agent-name">RiskMonitor</div>
+            <div class="agent-role">Agente 1 · Detección de riesgos</div>
+          </div>
+        </div>
+        <div class="agent-desc">Monitorea clima y noticias globales. Clasifica amenazas: LOW / MEDIUM / HIGH / CRITICAL.</div>
+        <div class="agent-tools">
+          <span class="tool-tag blue">get_weather</span>
+          <span class="tool-tag blue">get_news</span>
+          <span class="tool-tag purple">NATS event bus</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon green">📦</div>
+          <div>
+            <div class="agent-name">InventoryManager</div>
+            <div class="agent-role">Agente 2 · Impacto en inventario</div>
+          </div>
+        </div>
+        <div class="agent-desc">Evalúa stock en riesgo, rutas comprometidas y valor USD afectado por ubicación.</div>
+        <div class="agent-tools">
+          <span class="tool-tag green">get_inventory</span>
+          <span class="tool-tag green">get_active_routes</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon amber">🗺️</div>
+          <div>
+            <div class="agent-name">RouteOptimizer</div>
+            <div class="agent-role">Agente 3 · Ejecución y rerouting</div>
+          </div>
+        </div>
+        <div class="agent-desc">Calcula rutas alternativas, emite alertas y confirma ejecución. Genera mapa HTML interactivo.</div>
+        <div class="agent-tools">
+          <span class="tool-tag amber">get_route</span>
+          <span class="tool-tag amber">alt_route</span>
+          <span class="tool-tag amber">send_alert</span>
+          <span class="tool-tag amber">confirm_action</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2: CAPACIDADES Y LIMITACIONES -->
+    <div class="col">
+      <div class="col-title" style="color: #10b981;">Capacidades Actuales</div>
+
+      <div class="cap-item">
+        <div class="cap-icon">✅</div>
+        <div class="cap-text"><strong>Monitoreo multi-puerto en tiempo real</strong>Puertos y rutas activas con riesgo actualizado vía WebSocket sin intervención humana.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-icon">✅</div>
+        <div class="cap-text"><strong>Simulación de eventos geoespaciales</strong>Huracanes, cierres de puerto y bloqueos por coordenadas — propagación automática de riesgo.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-icon">✅</div>
+        <div class="cap-text"><strong>Pipeline 3-agentes orquestado</strong>Riesgo → Inventario → Acción en cadena, con publicación de eventos CloudEvents sobre NATS.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-icon">✅</div>
+        <div class="cap-text"><strong>Protocolo MCP estandarizado</strong>Herramientas intercambiables sin reescribir lógica de agentes. Listo para conectar ERPs reales.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-icon">✅</div>
+        <div class="cap-text"><strong>UI operativa en Next.js</strong>Dashboard con alertas, métricas, mapa de rutas y panel de simulaciones en vivo.</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="col-title" style="color: #f87171;">Limitaciones (PoC)</div>
+
+      <div class="limit-item">
+        <span class="limit-badge">DATOS</span>
+        <div class="limit-text">Fuentes de información gratuitas y con baja frecuencia de actualización. Sin ERP real conectado.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">LLM</span>
+        <div class="limit-text">Modelo local Ollama (hermes3:8b). Razonamiento limitado vs. GPT-4 / Claude Opus.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">ESCALA</span>
+        <div class="limit-text">Memoria de agentes no persistente entre sesiones. Sin aprendizaje acumulativo aún.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">INFRA</span>
+        <div class="limit-text">Entorno local / Docker. Sin alta disponibilidad ni redundancia de producción.</div>
+      </div>
+    </div>
+
+    <!-- COL 3: CON INVERSIÓN -->
+    <div class="col">
+      <div class="col-title" style="color: #818cf8;">Con Inversión</div>
+
+      <div class="inv-item">
+        <div class="inv-header">
+          <div class="inv-emoji">🧠</div>
+          <div class="inv-title">Modelos de IA de Frontera</div>
+        </div>
+        <div class="inv-desc">Migrar a Claude Opus / GPT-4o para razonamiento complejo, análisis geopolítico profundo y detección de patrones sutiles.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-header">
+          <div class="inv-emoji">📡</div>
+          <div class="inv-title">APIs de Datos Premium</div>
+        </div>
+        <div class="inv-desc">Integración con Reuters, Bloomberg, Lloyd's, datos AIS (posición de barcos en tiempo real) y feeds de clima profesional.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-header">
+          <div class="inv-emoji">🔗</div>
+          <div class="inv-title">Conectores ERP / TMS Reales</div>
+        </div>
+        <div class="inv-desc">SAP, Oracle SCM, Flexport. El agente actúa directamente sobre el sistema de gestión — no solo reporta.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-header">
+          <div class="inv-emoji">🌍</div>
+          <div class="inv-title">Memoria y Aprendizaje Continuo</div>
+        </div>
+        <div class="inv-desc">Base vectorial (Pinecone/Weaviate) para que los agentes recuerden patrones históricos y mejoren predicciones con el tiempo.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-header">
+          <div class="inv-emoji">⚡</div>
+          <div class="inv-title">Infraestructura Cloud Productiva</div>
+        </div>
+        <div class="inv-desc">Kubernetes en AWS/GCP, Temporal para orquestación durable, multi-tenant SaaS con onboarding de clientes.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TECH STRIP -->
+  <div class="tech-strip">
+    <div class="tech-label">Stack</div>
+    <div class="tech-tags">
+      <span class="tech-tag sky">CrewAI / Agentes</span>
+      <span class="tech-tag indigo">FastAPI + WebSocket</span>
+      <span class="tech-tag green">Next.js 14</span>
+      <span class="tech-tag amber">Ollama · hermes3</span>
+      <span class="tech-tag pink">MCP Protocol</span>
+      <span class="tech-tag sky">NATS · CloudEvents</span>
+      <span class="tech-tag gray">Docker · SQLite</span>
+      <span class="tech-tag indigo">Tailwind CSS</span>
+      <span class="tech-tag green">Folium Maps</span>
+      <span class="tech-tag pink">Temporal (roadmap)</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <div class="footer-name">Supply Chain Risk Intelligence</div>
+      <div class="footer-sub">Prueba de Concepto · Multi-Agente IA · 2025</div>
+    </div>
+    <div class="footer-cta">Solicitar Demo →</div>
+  </div>
+
+</div>
+</body>
+</html>

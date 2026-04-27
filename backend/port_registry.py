@@ -11,6 +11,27 @@ from backend.models import PortStatus, RiskLevel
 
 _DATA_FILE = Path(__file__).parent / "data" / "ports.json"
 
+_country_code_cache: dict[str, str | None] = {}
+
+
+def _resolve_country_code(city: str) -> str | None:
+    if city in _country_code_cache:
+        return _country_code_cache[city]
+    try:
+        from urllib.request import urlopen
+        from urllib.parse import quote_plus
+        import json as _json
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={quote_plus(city)}&count=1&language=en&format=json"
+        with urlopen(url, timeout=5) as resp:
+            data = _json.loads(resp.read())
+        results = data.get("results") or []
+        code = results[0].get("country_code") if results else None
+        _country_code_cache[city] = code
+        return code
+    except Exception:
+        _country_code_cache[city] = None
+        return None
+
 
 class PortRegistry:
     def __init__(self) -> None:
@@ -65,7 +86,8 @@ class PortRegistry:
             return False
         self._ports.append(city)
         if city not in self._statuses:
-            self._statuses[city] = PortStatus(city=city)
+            country_code = _resolve_country_code(city)
+            self._statuses[city] = PortStatus(city=city, country_code=country_code)
         self._save()
         return True
 

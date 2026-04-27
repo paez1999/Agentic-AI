@@ -1,0 +1,56 @@
+{
+  "MX": [
+    "https://www.eluniversal.com.mx/rss.xml",
+    "https://www.jornada.com.mx/rss/ultimas.xml"
+  ],
+  "US": [
+    "https://feeds.reuters.com/reuters/USNewsHeadlines",
+    "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
+  ],
+  "CN": [
+    "http://www.xinhuanet.com/english/rss/worldrss.xml",
+    "https://www.scmp.com/rss/91/feed"
+  ],
+  "SG": [
+    "https://www.straitstimes.com/news/world/rss.xml"
+  ],
+  "NL": [
+    "https://nltimes.nl/rss.xml"
+  ],
+  "DE": [
+    "https://rss.dw.com/rdf/rss-en-all"
+  ],
+  "BE": [
+    "https://www.brusselstimes.com/feed"
+  ],
+  "KR": [
+    "http://www.koreaherald.com/common/rss_xml.php?ct=102"
+  ],
+  "AE": [
+    "https://www.khaleejtimes.com/rss"
+  ],
+  "BR": [
+    "https://feeds.folha.uol.com.br/mundo/rss091.xml"
+  ],
+  "MA": [
+    "https://www.moroccoworldnews.com/feed"
+  ],
+  "GR": [
+    "https://www.ekathimerini.com/rss"
+  ],
+  "LK": [
+    "https://www.dailymirror.lk/rss"
+  ],
+  "MY": [
+    "https://www.thestar.com.my/rss/news/world"
+  ],
+  "PA": [
+    "https://www.prensa.com/rss/tecnologia/"
+  ],
+  "GT": [
+    "https://www.prensalibre.com/internacional/feed/"
+  ],
+  "JP": [
+    "https://www3.nhk.or.jp/nhkworld/en/news/rss/rss.xml"
+  ]
+}

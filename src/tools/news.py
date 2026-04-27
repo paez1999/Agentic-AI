@@ -79,6 +79,63 @@ def get_news(query: str) -> str:
     return json.dumps(matches, ensure_ascii=False)
 
 
+def get_local_news(city: str, country_code: str, lang: str = "en", max_results: int = 8) -> list[dict]:
+    """Fetch local RSS news for a city, filtered by country code. Falls back to global feeds."""
+    import json as _json
+    from pathlib import Path
+    _feeds_path = Path(__file__).parent.parent.parent / "backend" / "data" / "country_feeds.json"
+    try:
+        country_feeds = _json.loads(_feeds_path.read_text(encoding="utf-8"))
+    except Exception:
+        country_feeds = {}
+
+    feed_list = country_feeds.get(country_code.upper() if country_code else "", [])
+    if not feed_list:
+        feed_list = [url for _, url in FEEDS]
+        sources = [src for src, _ in FEEDS]
+    else:
+        sources = [f"Local-{country_code.upper()}"] * len(feed_list)
+
+    all_entries: list[dict] = []
+    with ThreadPoolExecutor(max_workers=min(len(feed_list), 6)) as executor:
+        futures = {executor.submit(_fetch_feed, src, url): url for src, url in zip(sources, feed_list)}
+        for future in as_completed(futures):
+            all_entries.extend(future.result())
+
+    city_lower = city.lower()
+    seen_links: set[str] = set()
+    matches: list[dict] = []
+    for entry in all_entries:
+        link = entry.get("link", "")
+        if link in seen_links:
+            continue
+        text = (entry.get("title", "") + " " + entry.get("summary", "")).lower()
+        if city_lower in text:
+            seen_links.add(link)
+            matches.append({
+                "title": entry.get("title", ""),
+                "link": link,
+                "summary": entry.get("summary", ""),
+                "source": entry.get("source", ""),
+            })
+        if len(matches) >= max_results:
+            break
+
+    if not matches:
+        for entry in all_entries[:max_results]:
+            link = entry.get("link", "")
+            if link not in seen_links:
+                seen_links.add(link)
+                matches.append({
+                    "title": entry.get("title", ""),
+                    "link": link,
+                    "summary": entry.get("summary", ""),
+                    "source": entry.get("source", ""),
+                })
+
+    return matches
+
+
 NEWS_TOOL = Tool(
     name="get_news",
     description="Search recent world news headlines. Returns up to 5 matching articles.",

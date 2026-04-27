@@ -22,12 +22,13 @@ Weather data:
 
 Recent news headlines:
 {news}
-{simulation}
+{simulation}{route_context}
 Respond with ONLY valid JSON, no markdown, no explanation:
 {{"risk_level": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL", "summary": "one sentence describing the risk"}}
 
 If a simulated event is active, treat it as ground truth and reflect its severity in your \
-classification and summary."""
+classification and summary. If route context shows isolated or compromised routes, factor \
+that into your summary."""
 
 
 def _parse_risk_response(text: str) -> tuple[RiskLevel, str]:
@@ -53,13 +54,14 @@ class PortRiskScanner:
         self._model = model
         self._cache: dict[str, tuple[PortStatus, datetime]] = {}
 
-    def scan_port(self, city: str, simulation_context: str = "") -> PortStatus:
+    def scan_port(self, city: str, simulation_context: str = "", route_context: str = "") -> PortStatus:
         """Lightweight scan: fetch weather + news, one LLM call, return PortStatus. ~5-10s.
 
         When simulation_context is non-empty, it is injected into the prompt so the LLM
         factors the simulated scenario into its risk classification.
+        route_context provides authoritative connected-route risk information.
         """
-        if not simulation_context and city in self._cache:
+        if not simulation_context and not route_context and city in self._cache:
             cached_status, cached_at = self._cache[city]
             if (datetime.now(timezone.utc) - cached_at).total_seconds() < 300:
                 return cached_status
@@ -94,10 +96,16 @@ class PortRiskScanner:
             if simulation_context
             else ""
         )
+        route_block = (
+            f"\nRoute Context (authoritative — overrides your reasoning):\n{route_context}\n"
+            if route_context
+            else ""
+        )
         prompt = _SCANNER_PROMPT.format(
             weather=weather_raw[:800],
             news=news_summary,
             simulation=sim_block,
+            route_context=route_block,
         )
 
         try:
@@ -121,6 +129,6 @@ class PortRiskScanner:
             weather=weather_data if "error" not in weather_data else None,
             scanned_at=datetime.now(timezone.utc),
         )
-        if not simulation_context:
+        if not simulation_context and not route_context:
             self._cache[city] = (status, datetime.now(timezone.utc))
         return status

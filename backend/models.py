@@ -18,6 +18,11 @@ class PortStatus(BaseModel):
     city: str
     risk_level: RiskLevel = RiskLevel.LOW
     summary: str = "Not yet scanned"
+    isolated: bool = False
+    affected_routes: list[dict] | None = None   # [{"route_id": str, "risk_level": str, "origin": str, "destination": str}]
+    local_news: list[dict] | None = None         # [{"title": str, "link": str, "summary": str, "source": str}]
+    news_reasoning: str | None = None
+    country_code: str | None = None
     weather: dict[str, Any] | None = None
     scanned_at: datetime | None = None
     lat: float | None = None
@@ -34,6 +39,9 @@ class RouteStatus(BaseModel):
     origin_weather: dict[str, Any] | None = None
     destination_weather: dict[str, Any] | None = None
     scanned_at: datetime | None = None
+    waypoints: list[list[float]] | None = None
+    planner_rationale: str | None = None
+    avoid_used: list[str] | None = None
 
 
 class FullAnalysisJob(BaseModel):

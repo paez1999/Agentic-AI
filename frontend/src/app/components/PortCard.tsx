@@ -68,7 +68,14 @@ export function PortCard({ port, onViewDetails, onScan }: PortCardProps) {
               </p>
             )}
           </div>
-          <RiskBadge level={port.risk_level} />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {port.isolated && (
+              <span className="text-[10px] font-bold font-mono text-red-400 border border-red-500/50 rounded px-1 py-0.5 uppercase tracking-wider">
+                ISOLATED
+              </span>
+            )}
+            <RiskBadge level={port.risk_level} />
+          </div>
         </div>
 
         {/* Summary */}
@@ -99,6 +106,39 @@ export function PortCard({ port, onViewDetails, onScan }: PortCardProps) {
         {!w && (
           <div className="rounded border border-dashed border-slate-800 bg-slate-950/60 p-2 text-center text-[11px] text-slate-600 font-mono">
             AWAITING TELEMETRY
+          </div>
+        )}
+
+        {/* Affected routes */}
+        {port.affected_routes && port.affected_routes.length > 0 && (
+          <div className="text-xs text-slate-500 font-mono">
+            <span className="text-slate-400 font-medium">Affected routes: </span>
+            {port.affected_routes
+              .map((r) => `${r.origin}↔${r.destination} (${r.risk_level})`)
+              .join(", ")}
+          </div>
+        )}
+
+        {/* Local news */}
+        {port.local_news && port.local_news.length > 0 && (
+          <div className="border-t border-slate-800/60 pt-2">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-slate-500 mb-1">
+              Local News
+            </p>
+            <ul className="space-y-1">
+              {port.local_news.slice(0, 3).map((article, i) => (
+                <li key={i} className="text-[11px]">
+                  <a
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-cyan-500/80 hover:text-cyan-300 hover:underline line-clamp-1 transition-colors"
+                  >
+                    {article.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

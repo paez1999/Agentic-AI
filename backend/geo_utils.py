@@ -123,3 +123,63 @@ def find_affected_routes(
         for route_id, origin, destination in routes
         if route_intersects_radius(origin, destination, event_lat, event_lon, radius_km)
     ]
+
+
+
+from functools import lru_cache
+from urllib.parse import quote_plus
+from urllib.request import urlopen
+import json as _json
+
+@lru_cache(maxsize=256)
+def _geocode(city: str) -> list[float] | None:
+    """Return [lon, lat] for any city via Open-Meteo geocoding (free, no key)."""
+    # Check hardcoded coords first
+    key = city.lower().strip()
+    if key in CITY_COORDS:
+        c = CITY_COORDS[key]
+        return [c[0], c[1]]
+    try:
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={quote_plus(city)}&count=1&language=en&format=json"
+        with urlopen(url, timeout=5) as resp:
+            data = _json.loads(resp.read())
+        results = data.get("results") or []
+        if results:
+            return [float(results[0]["longitude"]), float(results[0]["latitude"])]
+    except Exception:
+        pass
+    return None
+
+def slerp_gc(lon1: float, lat1: float, lon2: float, lat2: float, n: int = None) -> list[list[float]]:
+    """True spherical interpolation between two points, spacing ~50 km."""
+    R = 6371.0
+    lat1r, lon1r, lat2r, lon2r = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2r - lat1r
+    dlon = lon2r - lon1r
+    a = math.sin(dlat/2)**2 + math.cos(lat1r) * math.cos(lat2r) * math.sin(dlon/2)**2
+    dist_km = 2 * R * math.asin(math.sqrt(max(0, min(1, a))))
+    if n is None:
+        n = max(2, math.ceil(dist_km / 50))
+    # Convert to unit vectors
+    x1 = math.cos(lat1r) * math.cos(lon1r)
+    y1 = math.cos(lat1r) * math.sin(lon1r)
+    z1 = math.sin(lat1r)
+    x2 = math.cos(lat2r) * math.cos(lon2r)
+    y2 = math.cos(lat2r) * math.sin(lon2r)
+    z2 = math.sin(lat2r)
+    dot = max(-1.0, min(1.0, x1*x2 + y1*y2 + z1*z2))
+    omega = math.acos(dot)
+    points = []
+    for i in range(n + 1):
+        t = i / n
+        if abs(omega) < 1e-10:
+            xi, yi, zi = x1, y1, z1
+        else:
+            s = math.sin(omega)
+            xi = (math.sin((1-t)*omega)*x1 + math.sin(t*omega)*x2) / s
+            yi = (math.sin((1-t)*omega)*y1 + math.sin(t*omega)*y2) / s
+            zi = (math.sin((1-t)*omega)*z1 + math.sin(t*omega)*z2) / s
+        lat_i = math.degrees(math.asin(max(-1.0, min(1.0, zi))))
+        lon_i = math.degrees(math.atan2(yi, xi))
+        points.append([round(lon_i, 5), round(lat_i, 5)])
+    return points

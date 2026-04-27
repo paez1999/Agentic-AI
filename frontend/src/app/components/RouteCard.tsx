@@ -57,6 +57,27 @@ export function RouteCard({ route, onScan, onRemove }: RouteCardProps) {
           {route.summary}
         </p>
 
+        {/* Planner rationale */}
+        {route.planner_rationale && (
+          <p className="text-[11px] italic text-slate-500 leading-relaxed -mt-1">
+            {route.planner_rationale}
+          </p>
+        )}
+
+        {/* Avoided chokepoints */}
+        {route.avoid_used && route.avoid_used.length > 0 && (
+          <div className="flex flex-wrap gap-1 -mt-1">
+            {route.avoid_used.map((cp) => (
+              <span
+                key={cp}
+                className="text-[10px] font-mono bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded px-1 py-0.5"
+              >
+                avoiding {cp}
+              </span>
+            ))}
+          </div>
+        )}
+
         {/* Weather grid */}
         {(ow || dw) ? (
           <div className="grid grid-cols-2 gap-2">

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Chain Risk Intelligence — Poster v2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #e8e8e4; font-family: 'Georgia', 'Times New Roman', serif; padding: 24px; }
+
+    .poster-wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 8px 48px rgba(0,0,0,0.18);
+    }
+
+    /* TOP ACCENT */
+    .top-strip {
+      background: linear-gradient(90deg, #1a2744 0%, #c9a84c 50%, #1a2744 100%);
+      height: 5px;
+    }
+
+    /* HERO */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      padding: 32px 44px 26px;
+      background: #1a2744;
+      border-bottom: 3px solid #c9a84c;
+    }
+    .hero-left { display: flex; flex-direction: column; justify-content: center; }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.5);
+      color: #c9a84c; font-size: 10px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; padding: 5px 14px; border-radius: 2px;
+      width: fit-content; margin-bottom: 14px;
+      font-family: 'Arial', sans-serif;
+    }
+    .hero-title {
+      font-size: 32px; font-weight: 700; color: #ffffff;
+      line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 10px;
+    }
+    .hero-title em { color: #c9a84c; font-style: normal; }
+    .hero-problem {
+      font-size: 13px; color: #94a3b8; line-height: 1.7; max-width: 420px;
+      border-left: 3px solid #c9a84c; padding-left: 14px; margin-top: 12px;
+      font-style: italic; font-family: 'Georgia', serif;
+    }
+    .hero-problem strong { color: #e2e8f0; font-style: normal; display: block; margin-bottom: 3px; }
+
+    .hero-right {
+      display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 14px;
+    }
+    .metric-row { display: flex; gap: 12px; }
+    .metric-box {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(201,168,76,0.3);
+      padding: 14px 20px; text-align: center; min-width: 88px;
+    }
+    .metric-num { font-size: 28px; font-weight: 700; color: #c9a84c; font-family: 'Arial', sans-serif; }
+    .metric-num.white { color: #ffffff; }
+    .metric-label {
+      font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.5px; margin-top: 4px; font-family: 'Arial', sans-serif;
+    }
+    .live-dot { display: flex; gap: 8px; align-items: center; }
+    .live-dot-circle { width: 7px; height: 7px; border-radius: 50%; background: #c9a84c; }
+    .live-dot span { font-size: 10px; color: #64748b; font-family: 'Arial', sans-serif; letter-spacing: 0.5px; }
+
+    /* MAIN GRID */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 0.9fr;
+      gap: 1px;
+      background: #d1d5db;
+    }
+    .col { background: #ffffff; padding: 26px 28px; }
+
+    .col-title {
+      font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+      color: #1a2744; margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+      font-family: 'Arial', sans-serif;
+    }
+    .col-title::before { content: ''; display: block; width: 20px; height: 2px; background: currentColor; }
+    .col-title.gold  { color: #c9a84c; }
+    .col-title.green { color: #15803d; }
+    .col-title.red   { color: #991b1b; }
+
+    /* AGENT CARDS */
+    .agent-card {
+      background: #f9fafb; border: 1px solid #e5e7eb;
+      border-left: 4px solid #1a2744;
+      padding: 14px 16px; margin-bottom: 10px;
+    }
+    .agent-card.green { border-left-color: #15803d; }
+    .agent-card.gold  { border-left-color: #c9a84c; }
+
+    .agent-header { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+    .agent-icon {
+      width: 30px; height: 30px; display: flex; align-items: center;
+      justify-content: center; font-size: 15px; flex-shrink: 0;
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+    }
+    .agent-name { font-size: 13px; font-weight: 700; color: #111827; font-family: 'Arial', sans-serif; }
+    .agent-role { font-size: 9px; color: #6b7280; letter-spacing: 1px; text-transform: uppercase; font-family: 'Arial', sans-serif; margin-top: 1px; }
+    .agent-desc { font-size: 11px; color: #374151; line-height: 1.6; font-family: 'Arial', sans-serif; }
+    .agent-tools { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .tool-tag {
+      font-size: 9px; padding: 3px 9px; font-weight: 600;
+      border: 1px solid #d1d5db; color: #374151; background: #fff;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      color: #9ca3af; font-size: 18px; margin: 3px 0;
+    }
+
+    /* CAPABILITIES */
+    .cap-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+    .cap-check {
+      width: 18px; height: 18px; border-radius: 50%; background: #15803d;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px; font-size: 10px; color: white;
+      font-family: 'Arial', sans-serif;
+    }
+    .cap-text { font-size: 11px; color: #374151; line-height: 1.6; font-family: 'Arial', sans-serif; }
+    .cap-text strong { display: block; font-size: 11px; color: #111827; margin-bottom: 1px; }
+
+    .divider { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
+
+    /* LIMITATIONS */
+    .limit-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 11px; }
+    .limit-badge {
+      font-size: 8px; font-weight: 700; padding: 3px 7px;
+      background: #fef2f2; color: #991b1b; border: 1px solid #fecaca;
+      flex-shrink: 0; margin-top: 2px; white-space: nowrap;
+      font-family: 'Arial', sans-serif; letter-spacing: 0.5px;
+    }
+    .limit-text { font-size: 11px; color: #6b7280; line-height: 1.5; font-family: 'Arial', sans-serif; }
+
+    /* INVESTMENT */
+    .inv-item {
+      background: #fffdf5; border: 1px solid #e5e7eb;
+      border-left: 4px solid #c9a84c;
+      padding: 12px 14px; margin-bottom: 10px;
+    }
+    .inv-title { font-size: 12px; font-weight: 700; color: #1a2744; margin-bottom: 4px; font-family: 'Arial', sans-serif; }
+    .inv-desc  { font-size: 10px; color: #6b7280; line-height: 1.6; font-family: 'Arial', sans-serif; }
+
+    /* TECH STRIP */
+    .tech-strip {
+      background: #f8f9fb; padding: 13px 44px;
+      border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center;
+    }
+    .tech-label {
+      font-size: 9px; color: #9ca3af; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; margin-right: 20px; white-space: nowrap;
+      border-right: 1px solid #e5e7eb; padding-right: 20px;
+      font-family: 'Arial', sans-serif;
+    }
+    .tech-tags { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+    .tech-tag {
+      font-size: 9px; font-weight: 600; padding: 4px 12px;
+      border: 1px solid #d1d5db; color: #374151; background: #fff; white-space: nowrap;
+      font-family: 'Arial', sans-serif;
+    }
+
+    /* FOOTER */
+    .footer {
+      padding: 18px 44px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1a2744;
+    }
+    .footer-name { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+    .footer-sub  { font-size: 10px; color: #64748b; margin-top: 3px; font-family: 'Arial', sans-serif; letter-spacing: 0.5px; }
+    .footer-cta  {
+      background: #c9a84c; color: #1a2744; font-size: 11px; font-weight: 700;
+      padding: 12px 28px; letter-spacing: 1.5px; text-transform: uppercase;
+      font-family: 'Arial', sans-serif;
+    }
+  </style>
+</head>
+<body>
+<div class="poster-wrap">
+  <div class="top-strip"></div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-tag">Prueba de Concepto · Fase 1 · 2025</div>
+      <div class="hero-title">
+        Sistema de Inteligencia <em>Multi-Agente</em><br>
+        para Gestión de Riesgo en<br>
+        Cadena de Suministro
+      </div>
+      <div class="hero-problem">
+        <strong>El factor humano no puede monitorear el entorno global de forma continua.</strong>
+        Los equipos pierden señales críticas de riesgo al carecer de la visión completa — y detectan las disrupciones cuando el daño ya está hecho.
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="metric-row">
+        <div class="metric-box">
+          <div class="metric-num">3</div>
+          <div class="metric-label">Agentes IA</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num white">24/7</div>
+          <div class="metric-label">Operación</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num">4</div>
+          <div class="metric-label">Servidores MCP</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-num white">∞</div>
+          <div class="metric-label">Escalable</div>
+        </div>
+      </div>
+      <div class="live-dot">
+        <div class="live-dot-circle"></div>
+        <span>Sistema activo — Veracruz · Houston · Tampa</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- COL 1: AGENTES -->
+    <div class="col">
+      <div class="col-title">Arquitectura de Agentes</div>
+
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-icon">🌩️</div>
+          <div>
+            <div class="agent-name">RiskMonitor</div>
+            <div class="agent-role">Agente 1 · Detección de Riesgos</div>
+          </div>
+        </div>
+        <div class="agent-desc">Monitorea condiciones climáticas y noticias globales de forma continua. Clasifica el nivel de amenaza y publica alertas al bus de eventos.</div>
+        <div class="agent-tools">
+          <span class="tool-tag">Clima en tiempo real</span>
+          <span class="tool-tag">Noticias globales</span>
+          <span class="tool-tag">Bus de eventos NATS</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="agent-card green">
+        <div class="agent-header">
+          <div class="agent-icon">📦</div>
+          <div>
+            <div class="agent-name">InventoryManager</div>
+            <div class="agent-role">Agente 2 · Análisis de Impacto</div>
+          </div>
+        </div>
+        <div class="agent-desc">Evalúa el stock en riesgo, las rutas comprometidas y el valor económico total afectado por ubicación geográfica.</div>
+        <div class="agent-tools">
+          <span class="tool-tag">Consulta de inventario</span>
+          <span class="tool-tag">Rutas activas</span>
+          <span class="tool-tag">Valoración USD</span>
+        </div>
+      </div>
+
+      <div class="flow-arrow">↓</div>
+
+      <div class="agent-card gold">
+        <div class="agent-header">
+          <div class="agent-icon">🗺️</div>
+          <div>
+            <div class="agent-name">RouteOptimizer</div>
+            <div class="agent-role">Agente 3 · Decisión y Ejecución</div>
+          </div>
+        </div>
+        <div class="agent-desc">Calcula rutas alternativas evitando zonas de riesgo, emite alertas formales y confirma la ejecución de acciones correctivas.</div>
+        <div class="agent-tools">
+          <span class="tool-tag">Ruta óptima</span>
+          <span class="tool-tag">Ruta alternativa</span>
+          <span class="tool-tag">Alerta operativa</span>
+          <span class="tool-tag">Confirmación</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COL 2: CAPACIDADES Y LIMITACIONES -->
+    <div class="col">
+      <div class="col-title green">Capacidades Actuales</div>
+
+      <div class="cap-item">
+        <div class="cap-check">✓</div>
+        <div class="cap-text"><strong>Monitoreo multi-nodo en tiempo real</strong>Puertos y rutas con nivel de riesgo actualizado automáticamente vía WebSocket, sin intervención humana.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-check">✓</div>
+        <div class="cap-text"><strong>Simulación de eventos geoespaciales</strong>Modelado de huracanes, cierres de puertos y bloqueos con propagación automática de riesgo.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-check">✓</div>
+        <div class="cap-text"><strong>Pipeline multi-agente orquestado</strong>Flujo Riesgo → Inventario → Acción con eventos CloudEvents sobre NATS. Trazabilidad completa.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-check">✓</div>
+        <div class="cap-text"><strong>Protocolo MCP estandarizado</strong>Herramientas intercambiables sin reescribir lógica. Arquitectura lista para integraciones empresariales.</div>
+      </div>
+      <div class="cap-item">
+        <div class="cap-check">✓</div>
+        <div class="cap-text"><strong>Panel de operaciones (Next.js)</strong>Dashboard con alertas, métricas, mapa de rutas interactivo y gestión de simulaciones en vivo.</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="col-title red">Limitaciones del PoC</div>
+
+      <div class="limit-item">
+        <span class="limit-badge">DATOS</span>
+        <div class="limit-text">Fuentes abiertas con baja frecuencia de actualización. Sin integración a ERP corporativo.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">MODELO IA</span>
+        <div class="limit-text">LLM local (hermes3 8B). Capacidad de razonamiento inferior a modelos de frontera.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">MEMORIA</span>
+        <div class="limit-text">Sin persistencia de contexto entre sesiones. Sin aprendizaje histórico acumulativo.</div>
+      </div>
+      <div class="limit-item">
+        <span class="limit-badge">INFRAESTRUCTURA</span>
+        <div class="limit-text">Entorno local / Docker. Sin alta disponibilidad ni capacidad multi-tenant.</div>
+      </div>
+    </div>
+
+    <!-- COL 3: CON INVERSIÓN -->
+    <div class="col">
+      <div class="col-title gold">Con Inversión</div>
+
+      <div class="inv-item">
+        <div class="inv-title">🧠 Modelos de IA de Frontera</div>
+        <div class="inv-desc">Integración con Claude Opus o GPT-4o para razonamiento geopolítico complejo y detección avanzada de patrones de riesgo.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-title">📡 Datos de Inteligencia Premium</div>
+        <div class="inv-desc">Reuters, Bloomberg, Lloyd's Intelligence, AIS de posicionamiento naval en tiempo real y feeds meteorológicos profesionales.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-title">🔗 Integración ERP / TMS Real</div>
+        <div class="inv-desc">SAP, Oracle SCM, Flexport. Los agentes ejecutan acciones directamente en los sistemas de gestión — no solo reportan.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-title">🌍 Memoria Semántica Continua</div>
+        <div class="inv-desc">Base de datos vectorial para que los agentes recuerden patrones históricos y mejoren la precisión predictiva con el tiempo.</div>
+      </div>
+      <div class="inv-item">
+        <div class="inv-title">⚡ Plataforma Cloud Productiva</div>
+        <div class="inv-desc">Kubernetes en AWS/GCP, orquestación durable con Temporal y modelo SaaS multi-tenant con onboarding empresarial.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TECH STRIP -->
+  <div class="tech-strip">
+    <div class="tech-label">Tecnologías</div>
+    <div class="tech-tags">
+      <span class="tech-tag">Agentes IA / CrewAI</span>
+      <span class="tech-tag">FastAPI + WebSocket</span>
+      <span class="tech-tag">Next.js 14</span>
+      <span class="tech-tag">Ollama · LLM Local</span>
+      <span class="tech-tag">MCP Protocol</span>
+      <span class="tech-tag">NATS · CloudEvents</span>
+      <span class="tech-tag">Docker · SQLite</span>
+      <span class="tech-tag">Tailwind CSS</span>
+      <span class="tech-tag">Mapas Interactivos</span>
+      <span class="tech-tag">Temporal (roadmap)</span>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div>
+      <div class="footer-name">Supply Chain Risk Intelligence System</div>
+      <div class="footer-sub">Prueba de Concepto · Inteligencia Artificial Multi-Agente · 2025</div>
+    </div>
+    <div class="footer-cta">Solicitar Demo</div>
+  </div>
+
+</div>
+</body>
+</html>

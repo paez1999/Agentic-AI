@@ -141,6 +141,20 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
       }));
     });
 
+    ws.on("port.news_updated", (payload) => {
+      const { city, local_news, news_reasoning } = payload as {
+        city: string;
+        local_news: import("@/lib/types").Article[];
+        news_reasoning: string;
+        news_risk_contribution: string;
+      };
+      setPorts((prev) =>
+        prev.map((p) =>
+          p.city === city ? { ...p, local_news, news_reasoning } : p
+        )
+      );
+    });
+
     ws.on("simulation.created", (payload) => {
       const sim = payload as unknown as SimulationEvent;
       setSimulations((prev) =>

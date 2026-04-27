@@ -150,6 +150,33 @@ class RouteRiskScanner:
 
         risk_level, summary = _parse_risk_response(raw_text)
 
+        # Derive chokepoints to avoid from simulation context
+        _CHOKEPOINTS = [
+            "suez", "panama", "bab-el-mandeb", "red-sea-corridor", "hormuz",
+            "malacca", "gibraltar", "english-channel-dover", "bosphorus",
+            "cape-horn", "cape-good-hope",
+        ]
+        ctx_lower = (simulation_context or "").lower()
+        avoid = [cp for cp in _CHOKEPOINTS if cp in ctx_lower or cp.replace("-", " ") in ctx_lower]
+
+        # Plan geometry with avoidance
+        try:
+            from backend import route_planner
+            plan_result = route_planner.plan(origin, destination, mode=route_type, avoid=avoid)
+            waypoints = plan_result.get("waypoints") or None
+            avoid_used = plan_result.get("avoid_applied") or None
+        except Exception as e:
+            print(f"[RouteScanner] route_planner error for {route_id}: {e}")
+            waypoints = None
+            avoid_used = None
+
+        if not waypoints:
+            planner_rationale = "Route planning failed — using fallback geometry."
+        elif avoid_used:
+            planner_rationale = f"Avoiding {', '.join(avoid_used)} due to active simulation context."
+        else:
+            planner_rationale = "Direct route — no active threat avoidance."
+
         status = RouteStatus(
             route_id=route_id,
             origin=origin,
@@ -160,6 +187,9 @@ class RouteRiskScanner:
             origin_weather=origin_weather_data if "error" not in origin_weather_data else None,
             destination_weather=dest_weather_data if "error" not in dest_weather_data else None,
             scanned_at=datetime.now(timezone.utc),
+            waypoints=waypoints,
+            avoid_used=avoid_used,
+            planner_rationale=planner_rationale,
         )
 
         if not simulation_context:

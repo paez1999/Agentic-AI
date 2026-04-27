@@ -11,6 +11,20 @@ export interface WeatherData {
   condition_main: string;
 }
 
+export interface Article {
+  title: string;
+  link: string;
+  summary: string;
+  source: string;
+}
+
+export interface AffectedRoute {
+  route_id: string;
+  risk_level: string;
+  origin: string;
+  destination: string;
+}
+
 export interface PortStatus {
   city: string;
   risk_level: RiskLevel;
@@ -19,6 +33,11 @@ export interface PortStatus {
   scanned_at: string | null;
   lat: number | null;
   lon: number | null;
+  isolated?: boolean;
+  affected_routes?: AffectedRoute[] | null;
+  local_news?: Article[] | null;
+  news_reasoning?: string | null;
+  country_code?: string | null;
 }
 
 export type RouteType = "maritime" | "terrestrial" | "air";
@@ -33,6 +52,9 @@ export interface RouteStatus {
   origin_weather: WeatherData | null;
   destination_weather: WeatherData | null;
   scanned_at: string | null;
+  waypoints?: Array<[number, number]> | null;
+  planner_rationale?: string | null;
+  avoid_used?: string[] | null;
 }
 
 export interface FullAnalysisJob {

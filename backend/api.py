@@ -31,7 +31,8 @@ from backend.scanner import PortRiskScanner
 from backend.scheduler import AutoScanScheduler
 from backend.geo_utils import find_affected_cities, find_affected_routes
 from backend.route_geometry import get_geometry
-from backend.risk_rules import apply_port_rules, apply_route_rules
+from backend.risk_rules import apply_port_rules, apply_route_rules, apply_route_propagation
+from backend.port_news_analyst import PortNewsAnalyst
 from backend.simulation import EventType, SimulationStore
 from backend.websocket_manager import ConnectionManager
 from src.core.event_bus import EventBus
@@ -51,6 +52,7 @@ route_scanner = RouteRiskScanner()
 job_store = AnalysisJobStore()
 simulations = SimulationStore()
 auto_scan_config = AutoScanConfig()
+port_news_analyst = PortNewsAnalyst(ws_manager)
 
 
 async def _scan_all() -> None:
@@ -219,8 +221,30 @@ async def route_geometry(route_id: str) -> dict:
     status = route_registry.get_status(route_id)
     if status is None:
         raise HTTPException(404, f"Route '{route_id}' not found")
-    coords = get_geometry(status.origin, status.destination, status.route_type)
-    return {"route_id": route_id, "route_type": status.route_type, "coordinates": coords}
+    # Prefer cached waypoints from the last scan (avoidance-aware)
+    if status.waypoints:
+        coords = status.waypoints
+    else:
+        coords = get_geometry(status.origin, status.destination, status.route_type)
+    return {
+        "route_id": route_id,
+        "route_type": status.route_type,
+        "coordinates": coords,
+        "avoid_used": status.avoid_used or [],
+        "planner_rationale": status.planner_rationale,
+    }
+
+
+@app.post("/api/routes/{route_id:path}/replan")
+async def replan_route(route_id: str) -> dict:
+    """Clear cached geometry and trigger a fresh route plan."""
+    status = route_registry.get_status(route_id)
+    if status is None:
+        raise HTTPException(status_code=404, detail=f"Route '{route_id}' not found")
+    updated = status.model_copy(update={"waypoints": None, "planner_rationale": None, "avoid_used": None})
+    route_registry.update_status(route_id, updated)
+    asyncio.create_task(_scan_single_route(route_id))
+    return {"status": "replanning", "route_id": route_id}
 
 
 @app.delete("/api/routes/{route_id:path}")
@@ -553,15 +577,39 @@ async def _scan_single(city: str) -> None:
     try:
         loop = asyncio.get_running_loop()
         sim_context = simulations.context_for_city(city)
+
+        # Build route context from connected routes
+        connected_routes = [
+            r for r in route_registry.list_routes()
+            if r.origin.lower() == city.lower() or r.destination.lower() == city.lower()
+        ]
+        route_context = ""
+        if connected_routes:
+            lines = [f"Route {r.origin}↔{r.destination}: {r.risk_level.value} ({r.summary[:80]})"
+                     for r in connected_routes]
+            critical = sum(1 for r in connected_routes if r.risk_level.value == "CRITICAL")
+            high = sum(1 for r in connected_routes if r.risk_level.value == "HIGH")
+            if critical >= 2 or (critical + high) == len(connected_routes) and critical >= 1:
+                lines.append(f"→ Port is effectively isolated ({critical} CRITICAL routes)")
+            route_context = "\n".join(lines)
+
         status = await loop.run_in_executor(
-            None, scanner.scan_port, city, sim_context
+            None, scanner.scan_port, city, sim_context, route_context
         )
-        # Deterministic override: proximity to active events always wins
+        # Deterministic overrides
         status = apply_port_rules(status, simulations)
+        status = apply_route_propagation(status, city, route_registry)
         # Preserve or fetch coordinates so the map can pin this node
         existing = registry.get_status(city)
         if existing and existing.lat is not None:
             status.lat, status.lon = existing.lat, existing.lon
+            if existing.country_code and not status.country_code:
+                status = status.model_copy(update={"country_code": existing.country_code})
+            if existing.local_news and not status.local_news:
+                status = status.model_copy(update={
+                    "local_news": existing.local_news,
+                    "news_reasoning": existing.news_reasoning,
+                })
         else:
             coords = await _geocode_city(city)
             if coords:
@@ -576,5 +624,8 @@ async def _scan_single(city: str) -> None:
                 "alert.new",
                 {"city": city, "status": status.model_dump(mode="json")},
             )
+        # Non-blocking news analysis (runs after response is sent)
+        country_code = status.country_code
+        asyncio.create_task(port_news_analyst.analyze_port(city, country_code, registry))
     except Exception as e:
         print(f"[API] Scan error for {city}: {e}")

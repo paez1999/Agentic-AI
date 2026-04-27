@@ -327,45 +327,17 @@ def get_geometry(
 ) -> list[list[float]]:
     """
     Return display geometry as a list of [lon, lat] pairs.
-    Falls back gracefully when external APIs or waypoints are unavailable.
+    Delegates to route_planner for maritime/air; uses ORS + fallbacks for terrestrial.
     """
-    o_key = origin.lower().strip()
-    d_key = destination.lower().strip()
-    key   = frozenset({o_key, d_key})
+    from backend import route_planner as _planner
+    result = _planner.plan(origin, destination, mode=route_type or "maritime")
+    wps = result.get("waypoints", [])
+    if wps:
+        return wps
 
-    o_coord = _resolve_coord(o_key)
-    d_coord = _resolve_coord(d_key)
-
-    if route_type == "maritime":
-        if key in _MARITIME:
-            pts = list(_MARITIME[key])          # copy so reverse is safe
-            if pts[0] != o_coord and pts[-1] == o_coord:
-                pts = list(reversed(pts))
-            return _densify(pts)                # fill gaps between lane waypoints
-        # Generic: interpolated arc across water
-        if o_coord and d_coord:
-            return _great_circle(o_coord[0], o_coord[1], d_coord[0], d_coord[1], n=60)
-
-    elif route_type == "terrestrial":
-        # Try ORS first
-        ors = _ors_geometry(origin, destination)
-        if ors:
-            return ors
-        # Predefined fallback waypoints
-        if key in _TERRESTRIAL_FALLBACK:
-            pts = list(_TERRESTRIAL_FALLBACK[key])  # copy so reverse is safe
-            if pts and o_coord and pts[0] != o_coord and pts[-1] == o_coord:
-                pts = list(reversed(pts))
-            return _densify(pts)                # fill gaps between road waypoints
-        # Last resort: interpolated great-circle
-        if o_coord and d_coord:
-            return _great_circle(o_coord[0], o_coord[1], d_coord[0], d_coord[1], n=60)
-
-    elif route_type == "air":
-        if o_coord and d_coord:
-            return _great_circle(o_coord[0], o_coord[1], d_coord[0], d_coord[1])
-
-    # Fallback
+    # Last-resort: two-point endpoint line
+    o_coord = _resolve_coord(origin.lower().strip())
+    d_coord = _resolve_coord(destination.lower().strip())
     if o_coord and d_coord:
         return [o_coord, d_coord]
     return []

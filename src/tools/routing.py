@@ -181,3 +181,44 @@ CONFIRM_TOOL = Tool(
     },
     fn=confirm_action,
 )
+
+
+def plan_route(origin: str, destination: str, mode: str = "maritime", avoid: list = []) -> str:
+    import sys, os, json
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../../.."))
+    from backend import route_planner
+    result = route_planner.plan(origin, destination, mode, avoid)
+    return json.dumps(result)
+
+
+PLAN_ROUTE_TOOL = Tool(
+    name="plan_route",
+    description=(
+        "Plan an optimal route between two ports/cities. "
+        "mode: 'maritime' (ocean corridors), 'air' (great circle), or 'terrestrial' (road). "
+        "avoid: list of chokepoint names to route around — valid values: "
+        "suez, panama, bab-el-mandeb, red-sea-corridor, hormuz, malacca, "
+        "gibraltar, english-channel-dover, bosphorus, cape-horn, cape-good-hope. "
+        "Returns waypoints, chokepoints_crossed, distance_km, avoid_applied."
+    ),
+    parameters={
+        "type": "object",
+        "properties": {
+            "origin": {"type": "string", "description": "Origin city or port name"},
+            "destination": {"type": "string", "description": "Destination city or port name"},
+            "mode": {
+                "type": "string",
+                "enum": ["maritime", "air", "terrestrial"],
+                "default": "maritime",
+            },
+            "avoid": {
+                "type": "array",
+                "items": {"type": "string"},
+                "default": [],
+                "description": "Chokepoint names to avoid",
+            },
+        },
+        "required": ["origin", "destination"],
+    },
+    fn=plan_route,
+)
