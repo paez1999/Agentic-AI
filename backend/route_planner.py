@@ -45,6 +45,26 @@ class MaritimeGraph:
             self._adj.setdefault(f, []).append((t, edge))
             self._adj.setdefault(t, []).append((f, {**edge, "waypoints": list(reversed(edge["waypoints"]))}))
 
+    def resolve_node(self, city: str) -> str | None:
+        """Resolve a city name to a graph node ID without requiring geocoding."""
+        key = city.lower().strip()
+        # Exact match
+        if key in self._nodes:
+            return key
+        # Partial match (e.g. "new york" → "new-york", "los angeles" → "los-angeles")
+        key_norm = key.replace(" ", "-")
+        if key_norm in self._nodes:
+            return key_norm
+        # Substring match
+        for nid in self._nodes:
+            if key in nid or nid in key or key_norm in nid:
+                return nid
+        # Fall back to geocode + snap
+        loc = _geocode(city)
+        if loc:
+            return self.snap_to_nearest(loc[0], loc[1])
+        return None
+
     def snap_to_nearest(self, lon: float, lat: float, max_km: float = 200.0) -> str | None:
         best_id, best_dist = None, float("inf")
         for nid, n in self._nodes.items():
@@ -160,15 +180,13 @@ def plan(origin: str, destination: str, mode: str = "maritime", avoid: list = []
     if mode == "maritime":
         try:
             g = _get_graph()
-            o = _geocode(origin)
-            d = _geocode(destination)
-            if o and d:
-                origin_id = g.snap_to_nearest(o[0], o[1])
-                dest_id = g.snap_to_nearest(d[0], d[1])
-                if origin_id and dest_id:
-                    result = g.plan(origin_id, dest_id, avoid)
-                    if result["waypoints"]:
-                        return result
+            origin_id = g.resolve_node(origin)
+            dest_id = g.resolve_node(destination)
+            if origin_id and dest_id:
+                result = g.plan(origin_id, dest_id, avoid)
+                if result["waypoints"]:
+                    return result
+            logger.warning("Maritime: could not resolve '%s'→'%s' in graph", origin, destination)
         except Exception as e:
             logger.warning("Maritime plan error: %s", e)
         return _slerp_fallback(origin, destination)
