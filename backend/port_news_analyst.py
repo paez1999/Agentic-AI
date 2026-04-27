@@ -44,6 +44,17 @@ class PortNewsAnalyst:
         self._cache: dict[str, datetime] = {}
 
     async def analyze_port(self, city: str, country_code: str | None, port_registry: PortRegistry) -> None:
+        # Backfill country_code for ports added before this field existed
+        if not country_code:
+            from backend.port_registry import _resolve_country_code
+            loop0 = asyncio.get_running_loop()
+            resolved = await loop0.run_in_executor(None, _resolve_country_code, city)
+            if resolved:
+                country_code = resolved
+                status = port_registry.get_status(city)
+                if status and not status.country_code:
+                    port_registry.update_status(city, status.model_copy(update={"country_code": resolved}))
+
         cache_key = f"{city}:{country_code}"
         if cache_key in self._cache:
             age = (datetime.now(timezone.utc) - self._cache[cache_key]).total_seconds()
