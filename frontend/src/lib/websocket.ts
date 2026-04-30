@@ -2,7 +2,7 @@ import type { WSEvent } from "./types";
 
 type EventHandler = (payload: Record<string, unknown>) => void;
 
-export class SupplyChainWS {
+export class ShieldStockWS {
   private ws: WebSocket | null = null;
   private handlers = new Map<string, Set<EventHandler>>();
   private reconnectDelay = 1000;

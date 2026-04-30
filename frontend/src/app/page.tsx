@@ -52,7 +52,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <h1 className="font-mono text-sm font-bold text-slate-100 leading-none tracking-wide">
-                SUPPLY<span className="text-cyan-400">·</span>CHAIN<span className="text-cyan-400">·</span>OPS
+                SHIELD<span className="text-cyan-400">·</span>STOCK
               </h1>
               <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500 mt-1">
                 Risk Monitoring Station

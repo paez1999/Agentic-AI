@@ -3,8 +3,8 @@ import "./globals.css";
 import { PortStoreProvider } from "./hooks/usePortStore";
 
 export const metadata: Metadata = {
-  title: "Supply Chain Risk Dashboard",
-  description: "Real-time port risk monitoring",
+  title: "ShieldStock — Risk Monitoring",
+  description: "Real-time supply chain risk monitoring",
 };
 
 export default function RootLayout({

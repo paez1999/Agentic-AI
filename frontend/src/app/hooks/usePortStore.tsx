@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { api } from "@/lib/api";
-import { SupplyChainWS } from "@/lib/websocket";
+import { ShieldStockWS } from "@/lib/websocket";
 import type {
   FullAnalysisJob,
   PortStatus,
@@ -45,7 +45,7 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
   const [simulations, setSimulations] = useState<SimulationEvent[]>([]);
   const [routes, setRoutes] = useState<RouteStatus[]>([]);
   const [connected, setConnected] = useState(false);
-  const wsRef = useRef<SupplyChainWS | null>(null);
+  const wsRef = useRef<ShieldStockWS | null>(null);
 
   const mergePort = useCallback((status: PortStatus) => {
     setPorts((prev) => {
@@ -78,7 +78,7 @@ export function PortStoreProvider({ children }: { children: React.ReactNode }) {
 
     const wsUrl =
       (process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8000") + "/ws";
-    const ws = new SupplyChainWS(wsUrl);
+    const ws = new ShieldStockWS(wsUrl);
     wsRef.current = ws;
 
     ws.on("port.status_updated", (payload) => {
